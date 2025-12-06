@@ -25,6 +25,33 @@ const createIssue = asyncHandler(async (req, res) => {
     }
   }
 
+  // Handle location
+  let locationData = { type: 'Point', coordinates: [0, 0] };
+  
+  if (location) {
+    if (typeof location === 'string') {
+      // Check if it looks like coordinates "lat, lon"
+      const coords = location.split(',').map(n => parseFloat(n.trim()));
+      if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+        // GeoJSON expects [longitude, latitude]
+        locationData = {
+          type: 'Point',
+          coordinates: [coords[1], coords[0]], // Swap for GeoJSON
+          address: location // Store original string as address too just in case
+        };
+      } else {
+        // Treat as address string
+        locationData = {
+          type: 'Point',
+          coordinates: [0, 0],
+          address: location
+        };
+      }
+    } else if (typeof location === 'object') {
+      locationData = location;
+    }
+  }
+
   // Build issue object with AI analysis
   const issueData = {
     title,
@@ -33,7 +60,7 @@ const createIssue = asyncHandler(async (req, res) => {
     email,
     notifyByEmail: notifyByEmail === 'true',
     fileUrl,
-    location: location || { type: 'Point', coordinates: [0, 0] },
+    location: locationData,
   };
 
   // Add AI classification if available

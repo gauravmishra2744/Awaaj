@@ -1,147 +1,89 @@
-import React, { useState, useEffect } from 'react';
-import { useSignIn } from '@clerk/clerk-react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
-import { FcGoogle } from "react-icons/fc";
-import { FaGithub, FaExclamationCircle } from "react-icons/fa";
-
+import { FaExclamationCircle, FaEnvelope, FaLock } from "react-icons/fa";
 import { motion } from "framer-motion";
 import 'react-toastify/dist/ReactToastify.css';
 import loginImage from "../assets/signup.png"; 
+import csrfManager from "../utils/csrfManager";
 
 const Login = () => {
-  const { signIn, setActive } = useSignIn();
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
-  const [step, setStep] = useState(1);
-  const [pendingSignIn, setPendingSignIn] = useState(null);
-  const [errors, setErrors] = useState({});
-  const [isValid, setIsValid] = useState({});
-
-  useEffect(() => {
-    if (email === '') {
-      setErrors(p => ({ ...p, email: null }));
-      setIsValid(p => ({ ...p, email: false }));
-    } else if (/\S+@\S+\.\S+/.test(email)) {
-      setErrors(p => ({ ...p, email: null }));
-      setIsValid(p => ({ ...p, email: true }));
-    } else {
-      setErrors(p => ({ ...p, email: 'Please enter a valid email' }));
-      setIsValid(p => ({ ...p, email: false }));
-    }
-  }, [email]);
-
-  useEffect(() => {
-    // Only clear the "required" error, not API errors
-    if (code && errors.code === 'Verification code is required') {
-      setErrors(p => ({ ...p, code: null }));
-    }
-    if (code) {
-      setIsValid(p => ({ ...p, code: true }));
-    } else {
-      setIsValid(p => ({ ...p, code: false }));
-    }
-  }, [code, errors.code]);
-
-
-  // Step 1: Request magic code
-  const handleEmailSubmit = async (e) => {
-    e.preventDefault();
-    if (!email) {
-      setErrors(p => ({ ...p, email: 'Email is required' }));
-      setIsValid(p => ({ ...p, email: false }));
-      return;
-    }
-    if (!isValid.email) return;
-
-    try {
-      const result = await signIn.create({
-        identifier: email,
-        strategy: 'email_code'
-      });
-      setPendingSignIn(result);
-      setStep(2);
-      toast.info("📩 Verification code sent to your email");
-    } catch (err) {
-      toast.error(err.errors?.[0]?.message || "Failed to send code");
-    }
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError('');
   };
 
-
-  // Step 2: Verify code
-  const handleCodeSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!code) {
-      setErrors(p => ({ ...p, code: 'Verification code is required' }));
-      setIsValid(p => ({ ...p, code: false }));
-      return;
-    }
-    if (!isValid.code) return;
+    setIsLoading(true);
+    setError('');
 
     try {
-      const result = await pendingSignIn.attemptFirstFactor({
-        strategy: 'email_code',
-        code
+      const response = await csrfManager.secureFetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
 
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId });
-        toast.success("🎉 Login Successful");
-        setTimeout(() => navigate('/home'), 1000);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed');
       }
+
+      // Store token and user info
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      // Dispatch event for other components to update
+      window.dispatchEvent(new Event('storage'));
+
+      toast.success("🎉 Login Successful");
+      
+      // Redirect based on role
+      setTimeout(() => {
+        if (data.user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else if (data.user.role === 'officer') {
+          navigate('/officer/dashboard');
+        } else {
+          navigate('/user/dashboard');
+        }
+      }, 1000);
+
     } catch (err) {
-      const errorMessage = "Verification code is wrong.";
-      toast.error(errorMessage);
-      setErrors(p => ({ ...p, code: errorMessage }));
-      setIsValid(p => ({ ...p, code: false }));
+      setError(err.message);
+      toast.error(err.message);
+    } finally {
+      setIsLoading(false);
     }
-
   };
-
-
-
-  // OAuth Sign In
-  const handleOAuthSignIn = async (provider) => {
-    await signIn.authenticateWithRedirect({
-      strategy: `oauth_${provider}`,
-      redirectUrl: '/home',
-      redirectUrlComplete: '/home'
-    });
-  };
-
-  const emailBorderColor = errors.email
-    ? '#ef4444' // red-500
-    : isValid.email
-    ? '#22c55e' // green-500
-    : '#86efac'; // green-300
-
-  const codeBorderColor = errors.code
-    ? '#ef4444' // red-500
-    : isValid.code
-    ? '#22c55e' // green-500
-    : '#86efac'; // green-300
 
   return (
-
-    <div 
-      className="flex flex-col md:flex-row min-h-screen items-center justify-center font-inter relative"
-      
-    >
+    <div className="flex flex-col md:flex-row min-h-screen items-center justify-center font-inter relative bg-gray-50 dark:bg-gray-900">
         {/* Left Side - Image */}
         <motion.div
         initial={{ opacity: 0, x: -40 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6 }}
-        className="hidden md:flex md:w-1/2 justify-center items-center bg-transparent"
+        className="hidden md:flex md:w-1/2 justify-center items-center bg-transparent p-8"
         >
         <motion.img
             src={loginImage}
             alt="Login Illustration"
-            className="w-full h-[80vh] object-contain drop-shadow-2xl rounded-xl"
+            className="w-full max-w-lg object-contain drop-shadow-2xl rounded-xl"
             animate={{
-            y: [0, -25, 0],
+            y: [0, -15, 0],
             }}
             transition={{
             duration: 4,
@@ -150,160 +92,106 @@ const Login = () => {
             }}
         />
         </motion.div>
+
         {/* Right Side - Login Form */}
         <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="md:w-1/2 w-full flex justify-center"
-            
+            className="md:w-1/2 w-full flex justify-center p-4"
         >
-            <div className="rounded-2xl border border-green-500 bg-white/70 backdrop-blur-md p-8 shadow-2xl md:p-10 w-full max-w-md" style={{
-            background: 'rgba(34,197,94,0.15)',
-            backdropFilter: 'blur(10px)'
-        }}>
+            <div className="rounded-2xl border border-emerald-100 bg-white/90 backdrop-blur-md p-8 shadow-xl md:p-10 w-full max-w-md dark:bg-gray-800 dark:border-gray-700">
             
-            {/* Title */}
-            <h2 className="text-3xl font-bold text-center mb-2 text-green-700">
-                Welcome Back
-            </h2>
-            <p className="text-center text-sm text-gray-600 mb-6">
-                Sign in to access your account
-            </p>
+            <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-emerald-700 dark:text-emerald-400 mb-2">
+                    Welcome Back
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Sign in to access your Awaaz account
+                </p>
+            </div>
 
-            {/* Step 1: Enter Email */}
-            {step === 1 && (
-                <motion.form
-                noValidate
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4 }}
-                onSubmit={handleEmailSubmit}
-                className="space-y-4"
-                >
-
+            <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                    <input
-                        type="email"
-                        placeholder="Enter your email"
-                        className="w-full rounded-lg p-3 outline-none bg-white/80 text-black"
-                        style={{
-                            border: `1px solid ${emailBorderColor}`,
-                            transition: 'border-color 0.2s'
-                        }}
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                    />
-
-                    {errors.email && (
-                        <p className="text-red-500 text-sm flex items-center pt-1">
-
-                            <FaExclamationCircle className="mr-1" />
-                            {errors.email}
-                        </p>
-                    )}
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address</label>
+                    <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <FaEnvelope className="text-gray-400" />
+                        </div>
+                        <input
+                            type="email"
+                            name="email"
+                            required
+                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="you@example.com"
+                            value={formData.email}
+                            onChange={handleChange}
+                        />
+                    </div>
                 </div>
 
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
+                    <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <FaLock className="text-gray-400" />
+                        </div>
+                        <input
+                            type="password"
+                            name="password"
+                            required
+                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="••••••••"
+                            value={formData.password}
+                            onChange={handleChange}
+                        />
+                    </div>
+                </div>
 
+                {error && (
+                    <div className="bg-red-50 text-red-500 text-sm p-3 rounded-lg flex items-center">
+                        <FaExclamationCircle className="mr-2 flex-shrink-0" />
+                        {error}
+                    </div>
+                )}
 
                 <button
                     type="submit"
-                    className="w-full bg-green-500 hover:bg-green-600 text-white rounded-lg py-2 font-medium transition"
+                    disabled={isLoading}
+                    className={`w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg py-3 font-medium transition-all shadow-lg hover:shadow-emerald-500/30 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                    Continue
-                </button>
-                </motion.form>
-            )}
-
-            {/* Step 2: Enter Code */}
-            {step === 2 && (
-                <motion.form
-                noValidate
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4 }}
-                onSubmit={handleCodeSubmit}
-                className="space-y-4"
-                >
-
-                <div>
-                    <input
-                        type="text"
-                        placeholder="Enter verification code"
-                        className="w-full rounded-lg p-3 outline-none bg-white/80 text-black"
-                        style={{
-                            border: `1px solid ${codeBorderColor}`,
-                            transition: 'border-color 0.2s'
-                        }}
-                        value={code}
-                        onChange={(e) => setCode(e.target.value)}
-                    />
-
-                    {errors.code && (
-                        <p className="text-red-500 text-sm flex items-center pt-1">
-
-                            <FaExclamationCircle className="mr-1" />
-                            {errors.code}
-                        </p>
+                    {isLoading ? (
+                        <div className="flex items-center justify-center">
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                            Signing in...
+                        </div>
+                    ) : (
+                        'Sign In'
                     )}
-                </div>
-
-
-
-                <button
-                    type="submit"
-                    className="w-full bg-green-500 hover:bg-green-600 text-white rounded-lg py-2 font-medium transition"
-                >
-                    Verify & Continue
                 </button>
-                </motion.form>
-            )}
-
-            {/* Divider */}
-            <div className="my-6 flex items-center">
-                <hr className="flex-grow border-green-300" />
-                <span className="px-3 text-sm text-gray-500">OR</span>
-                <hr className="flex-grow border-green-300" />
-            </div>
-
-            {/* OAuth Buttons */}
-            <div className="space-y-3">
-                <button
-                onClick={() => handleOAuthSignIn('google')}
-                className="w-full flex items-center justify-center gap-3 border border-green-500 rounded-lg py-2 hover:bg-green-500 hover:text-white transition bg-white/80 text-black"
-                >
-                <FcGoogle size={20} />
-                Continue with Google
-                </button>
-                <button
-                onClick={() => handleOAuthSignIn('github')}
-                className="w-full flex items-center justify-center gap-3 border border-green-500 rounded-lg py-2 hover:bg-green-500 hover:text-white transition bg-white/80 text-black"
-                >
-                <FaGithub size={20} />
-                Continue with GitHub
-                </button>
-            </div>
+            </form>
 
             {/* Footer */}
-            <div className="text-center pt-6">
-                <Link
-                to="/"
-                className="inline-block text-sm text-green-700 hover:underline"
-                >
-                ← Back to Home
-                </Link>
-                <p className="text-sm text-gray-600 mt-4">
+            <div className="text-center pt-6 mt-4 border-t border-gray-100 dark:border-gray-700">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                     Don’t have an account?{' '}
-                    <Link to="/signup" className="text-green-700 hover:underline font-medium">
+                    <Link to="/signup" className="text-emerald-600 hover:text-emerald-700 font-semibold hover:underline">
                         Sign up
                     </Link>
                 </p>
+                <div className="mt-4">
+                    <Link
+                    to="/"
+                    className="inline-block text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                    >
+                    ← Back to Home
+                    </Link>
+                </div>
             </div>
 
             </div>
         </motion.div>
 
-        {/* Toast */}
         <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );

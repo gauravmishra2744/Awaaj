@@ -9,6 +9,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { useState, useCallback, useMemo, useEffect } from "react";
+import csrfManager from "../utils/csrfManager";
 
 const FormInput = ({ type = "text", id, label, placeholder, value, onChange, required = false, rows, icon: Icon, disabled = false, error }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -127,7 +128,7 @@ export default function ReportIssue() {
 
   const downloadReceipt = useCallback((data) => {
     console.log("Generating receipt for:", data);
-    alert("Receipt would be downloaded in real implementation!");
+    // alert("Receipt would be downloaded in real implementation!");
   }, []);
 
   const handleSubmit = useCallback(async () => {
@@ -140,22 +141,40 @@ export default function ReportIssue() {
     setIsSubmitting(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log("Issue submitted:", { ...formData, file: file?.name });
-      setSubmitStatus("success");
-      
-      downloadReceipt(formData);
-      
-      setFormData({
-        phone: "",
-        email: "",
-        title: "",
-        description: "",
-        location: "",
+      const data = new FormData();
+      data.append("title", formData.title);
+      data.append("description", formData.description);
+      data.append("phone", formData.phone);
+      data.append("email", formData.email);
+      data.append("location", formData.location); // Note: Backend expects GeoJSON or string, handling string for now
+      if (file) {
+        data.append("file", file);
+      }
+
+      const response = await csrfManager.secureFetch("http://localhost:5000/api/issues", {
+        method: "POST",
+        body: data,
       });
-      setFile(null);
-      
-      setTimeout(() => setSubmitStatus(null), 5000);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Issue submitted:", result);
+        setSubmitStatus("success");
+        downloadReceipt(result.issue);
+        
+        setFormData({
+          phone: "",
+          email: "",
+          title: "",
+          description: "",
+          location: "",
+        });
+        setFile(null);
+        
+        setTimeout(() => setSubmitStatus(null), 5000);
+      } else {
+        throw new Error("Failed to submit issue");
+      }
     } catch (err) {
       console.error("Submit error:", err);
       setSubmitStatus("error");

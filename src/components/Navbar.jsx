@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import Switch from '../DarkModeToggle';
 import { jwtDecode } from 'jwt-decode';
-import { useAuth } from '@clerk/clerk-react';
 import awaazLogo from '../assets/awaaz-logo.svg';
 import { title } from 'process';
 import { Info, Phone, Users, User, LogOut, Shield, LayoutDashboard, BookOpen, Menu, X, AlertTriangle,Vote,Map } from 'lucide-react';
@@ -12,8 +11,8 @@ const Navbar = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [rightDropdownOpen, setRightDropdownOpen] = useState(false);
+  const [token, setToken] = useState(localStorage.getItem('token'));
   const rightDropdownRef = useRef(null);
-  const { isSignedIn, signOut } = useAuth();
 
   const handleNav = (cb) => {
     setMobileMenuOpen(false);
@@ -21,11 +20,9 @@ const Navbar = () => {
   };
 
   const handleLogout = async () => {
-    if (signOut) {
-      await signOut(); 
-    }
     localStorage.removeItem("token");
-    window.dispatchEvent(new Event("storage-update"));
+    setToken(null);
+    window.dispatchEvent(new Event("storage")); // Trigger storage event for other tabs/components
     setRightDropdownOpen(false);
     navigate("/");
   };
@@ -33,6 +30,22 @@ const Navbar = () => {
   const handleSOSClick = () => {
     navigate('/sos');
   };
+
+  // Listen for storage changes to update token state
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setToken(localStorage.getItem('token'));
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    // Custom event for same-window updates if needed
+    window.addEventListener('storage-update', handleStorageChange); 
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('storage-update', handleStorageChange);
+    };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -66,16 +79,19 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', onClick);
   }, [mobileMenuOpen]);
 
-  const token = localStorage.getItem('token');
   let isAdmin = false;
+  let isOfficer = false;
 
   try {
     if (token) {
       const decoded = jwtDecode(token);
       isAdmin = decoded.role === 'admin';
+      isOfficer = decoded.role === 'officer';
     }
   } catch (err) {
     console.error('Invalid token');
+    // If token is invalid, maybe clear it?
+    // localStorage.removeItem('token'); 
   }
 
   const navLinks = [
@@ -208,7 +224,7 @@ const Navbar = () => {
                       <span>Civic Education & Rights</span>
                     </button>
                     
-                    {!(isSignedIn || token) ? (
+                    {!token ? (
                       <button
                         onClick={() => { setRightDropdownOpen(false); navigate('/login'); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl transition-all duration-200 group mt-2"
@@ -229,7 +245,12 @@ const Navbar = () => {
                         </button>
                         
                         <button
-                          onClick={() => { setRightDropdownOpen(false); navigate(isAdmin ? '/admin' : '/user/dashboard'); }}
+                          onClick={() => { 
+                            setRightDropdownOpen(false); 
+                            if (isAdmin) navigate('/admin');
+                            else if (isOfficer) navigate('/officer/dashboard');
+                            else navigate('/user/dashboard');
+                          }}
                           className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/50 rounded-xl transition-all duration-200 group"
                         >
                           {isAdmin ? (
@@ -306,7 +327,7 @@ const Navbar = () => {
               </div>
 
               <div className="space-y-3 flex-1">
-                {(isSignedIn || token) && (
+                {token && (
                   <>
                     <button
                       onClick={() => handleNav(() => navigate('/profile'))}
@@ -317,7 +338,11 @@ const Navbar = () => {
                     </button>
 
                     <button
-                      onClick={() => handleNav(() => navigate(isAdmin ? '/admin' : '/user/dashboard'))}
+                      onClick={() => handleNav(() => {
+                        if (isAdmin) navigate('/admin');
+                        else if (isOfficer) navigate('/officer/dashboard');
+                        else navigate('/user/dashboard');
+                      })}
                       className="w-full flex items-center gap-4 px-6 py-4 text-base font-medium text-gray-700 dark:text-gray-300 bg-green-50 dark:bg-green-950/50 hover:bg-green-100 dark:hover:bg-green-900/50 rounded-xl transition-all duration-300 group"
                     >
                       {isAdmin ? (
@@ -338,7 +363,7 @@ const Navbar = () => {
                   <span>Emergency SOS</span>
                 </button>
 
-                {(isSignedIn || token) ? (
+                {token ? (
                   <button
                     onClick={() => handleNav(handleLogout)}
                     className="w-full flex items-center gap-4 px-6 py-4 text-base font-medium text-red-600 dark:text-red-400 hover:text-white hover:bg-gradient-to-r from-red-500 to-red-600 rounded-xl transition-all duration-300 group"

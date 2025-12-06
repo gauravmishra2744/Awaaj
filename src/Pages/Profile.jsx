@@ -10,26 +10,9 @@ import {
   Lock,
   CheckCircle
 } from 'lucide-react';
-
-// Mock hooks and utilities for demonstration
-const useUser = () => ({ user: { id: 'mock-user-id' } });
-const useProfileStatus = () => ({
-  profileData: {
-    name: 'User Name',
-    email: 'user@example.com',
-    location: 'City, Country',
-    profilePictureUrl: null
-  },
-  isLoading: false,
-  refetch: () => {}
-});
-const toast = { success: (msg) => console.log('Success:', msg), error: (msg) => console.log('Error:', msg) };
-const csrfManager = {
-  secureFetch: (url, options) => Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
-};
+import useProfileStatus from '../hooks/useProfileStatus';
 
 const Profile = () => {
-  const { user: clerkUser } = useUser();
   const { profileData, isLoading, refetch } = useProfileStatus();
   const [user, setUser] = useState({
     username: '',
@@ -47,6 +30,12 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordRequest, setShowPasswordRequest] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const showToast = (msg, type = 'success') => {
+    setToastMessage({ msg, type });
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   useEffect(() => {
     if (profileData) {
@@ -54,7 +43,7 @@ const Profile = () => {
         username: profileData.name || '',
         email: profileData.email || '',
         location: profileData.location || '',
-        complaints: 7,
+        complaints: 7, // This would ideally come from the backend too
         lastActivity: new Date().toLocaleString(),
       };
       setUser(userData);
@@ -84,29 +73,35 @@ const Profile = () => {
   };
 
   const handleSave = async () => {
-    if (!clerkUser) {
-      toast.error('You must be logged in to update your profile');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showToast('You must be logged in to update your profile', 'error');
       return;
     }
     if (!validate()) {
-      toast.error('Please fix the validation errors before saving');
+      showToast('Please fix the validation errors before saving', 'error');
       return;
     }
     setIsSaving(true);
     try {
-      const profileResponse = await csrfManager.secureFetch('http://localhost:5000/api/profile/create-or-update', {
-        method: 'POST',
+      const response = await fetch('http://localhost:5000/api/profile/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
-          clerkUserId: clerkUser.id,
           email: formData.email,
           name: formData.username,
           location: formData.location
         })
       });
-      if (!profileResponse.ok) {
+
+      if (!response.ok) {
         throw new Error('Failed to update profile');
       }
-      const updatedProfile = await profileResponse.json();
+      
+      const updatedProfile = await response.json();
       setUser({
         ...user,
         username: formData.username,
@@ -114,11 +109,11 @@ const Profile = () => {
         location: formData.location,
       });
       refetch();
-      toast.success('Profile updated successfully');
+      showToast('Profile updated successfully');
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('Failed to update profile. Please try again.');
+      showToast('Failed to update profile. Please try again.', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -136,6 +131,20 @@ const Profile = () => {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(52,211,153,0.06)_0%,transparent_50%)] pointer-events-none"></div>
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-200/50 to-transparent"></div>
       
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-xl shadow-xl border-2 animate-in slide-in-from-top-2 ${
+          toastMessage.type === 'error' 
+            ? 'bg-red-50 border-red-200 text-red-700' 
+            : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+        }`}>
+          <div className="flex items-center gap-2 font-bold">
+            {toastMessage.type === 'error' ? <AlertTriangle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+            {toastMessage.msg}
+          </div>
+        </div>
+      )}
+
       <div className="relative z-10 p-4 sm:p-6 lg:p-8">
         <div className="max-w-3xl mx-auto">
           {/* Modern card with glass morphism */}

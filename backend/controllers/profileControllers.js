@@ -3,11 +3,13 @@ const xss = require('xss');
 const { asyncHandler } = require('../utils/asyncHandler.js');
 const { uploadOnCloudinary } = require('../utils/cloudinary.js');
 
-// Get user profile by Clerk ID
-const getUserByClerkId = asyncHandler(async (req, res) => {
-  const { clerkUserId } = req.params;
+// Get current user profile
+const getUserProfile = asyncHandler(async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
   
-  const user = await User.findByClerkId(clerkUserId);
+  const user = await User.findById(req.user._id);
   
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
@@ -26,7 +28,6 @@ const getUserByClerkId = asyncHandler(async (req, res) => {
 
 // Update user profile
 const updateUserProfile = asyncHandler(async (req, res) => {
-  const { clerkUserId } = req.params;
   const { name, email, location, profilePictureUrl } = req.body;
 
   // Validate required fields
@@ -44,7 +45,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   // Check if email is already taken by another user
   const existingUser = await User.findOne({ 
     email: sanitizedEmail, 
-    clerkUserId: { $ne: clerkUserId } 
+    _id: { $ne: req.user._id } 
   });
   
   if (existingUser) {
@@ -52,8 +53,8 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   }
 
   // Find and update user
-  const user = await User.findOneAndUpdate(
-    { clerkUserId },
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
     { 
       name: sanitizedName, 
       email: sanitizedEmail, 
@@ -79,60 +80,11 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   });
 });
 
-// Create or update user profile (for Clerk integration)
-const createOrUpdateUserProfile = asyncHandler(async (req, res) => {
-  const { clerkUserId, email, name, location, profilePictureUrl } = req.body;
-
-  if (!clerkUserId || !email) {
-    return res.status(400).json({ 
-      error: 'Clerk user ID and email are required' 
-    });
-  }
-
-  // Try to find existing user by Clerk ID
-  let user = await User.findByClerkId(clerkUserId);
-
-  if (user) {
-    // Update existing user
-    user.email = email;
-    if (name) user.name = name;
-    if (location) user.location = location;
-    if (profilePictureUrl) user.profilePictureUrl = profilePictureUrl;
-    await user.save();
-  } else {
-    // Create new user
-    user = new User({
-      clerkUserId,
-      email,
-      name: name || null,
-      location: location || null,
-      profilePictureUrl: profilePictureUrl || null,
-      password: 'clerk-auth', // Placeholder since Clerk handles auth
-      role: email.endsWith(process.env.DOMAIN_NAME || '@admin.com') ? 'admin' : 'user'
-    });
-    await user.save();
-  }
-
-  res.json({
-    id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    location: user.location,
-    profilePictureUrl: user.profilePictureUrl || null,
-    isProfileComplete: user.isProfileComplete(),
-    message: user.isProfileComplete() ? 'Profile complete' : 'Profile incomplete'
-  });
-});
-
 module.exports = {
-  getUserByClerkId,
+  getUserProfile,
   updateUserProfile,
-  createOrUpdateUserProfile,
   // Upload and set user's profile picture
   uploadProfilePicture: asyncHandler(async (req, res) => {
-    const { clerkUserId } = req.params;
-
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
@@ -146,8 +98,8 @@ module.exports = {
 
     const imageUrl = cloudinaryResponse.secure_url;
 
-    const user = await User.findOneAndUpdate(
-      { clerkUserId },
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
       { profilePictureUrl: imageUrl },
       { new: true }
     );

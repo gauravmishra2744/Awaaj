@@ -1,19 +1,25 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useUser } from '@clerk/clerk-react';
+import { jwtDecode } from 'jwt-decode';
 
 const PrivateRoute = ({ children, allowedRoles }) => {
-  const { isSignedIn, user, isLoaded } = useUser();
-
-  if (!isLoaded) return null; // or loading spinner
+  const token = localStorage.getItem('token');
 
   // 🔐 If user not signed in, redirect to login
-  if (!isSignedIn) {
+  if (!token) {
     return <Navigate to="/login" />;
   }
 
-  // ✅ Default to 'user' if role is undefined
-  const role = user?.publicMetadata?.role || "user";
+  let role = 'user';
+  try {
+    const decoded = jwtDecode(token);
+    role = decoded.role || 'user';
+  } catch (error) {
+    console.error("Invalid token:", error);
+    localStorage.removeItem('token');
+    return <Navigate to="/login" />;
+  }
+
   console.log("🔍 Authenticated User Role:", role);
 
   // ✅ Check role against allowedRoles

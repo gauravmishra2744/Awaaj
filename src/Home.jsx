@@ -4,7 +4,6 @@ import { Helmet } from "react-helmet-async";
 import "./Home.css";
 import { motion } from "framer-motion";
 import Switch from "./DarkModeToggle";
-import { useAuth, useUser, SignInButton, SignUpButton, UserButton } from "@clerk/clerk-react";
 import { toast, ToastContainer } from 'react-toastify';
 import Navbar from "./components/Navbar";
 
@@ -21,8 +20,9 @@ function Home() {
   const [activeFaq, setActiveFaq] = useState(null);
   const [faqFilter, setFaqFilter] = useState("All");
   const navigate = useNavigate();
-  const { isSignedIn, signOut } = useAuth();
-  const { user } = useUser();
+  
+  const token = localStorage.getItem('token');
+  const isSignedIn = !!token;
   const { isProfileComplete, isLoading: profileLoading } = useProfileStatus();
 
   useEffect(() => {
@@ -53,7 +53,8 @@ function Home() {
 
   const handleLogout = async () => {
     try {
-      await signOut();
+      localStorage.removeItem("token");
+      window.dispatchEvent(new Event("storage"));
       toast.info("You have been logged out");
       setTimeout(() => {
         navigate('/');
@@ -205,7 +206,8 @@ const questions = [
       title: "Report Issues",
       description: "Easily report problems with photos, location data, and detailed descriptions for faster resolution.",
       features: ["Photo uploads", "Map integration", "Categorized issues"],
-      gradient: "from-emerald-400 to-teal-500"
+      gradient: "from-emerald-400 to-teal-500",
+      link: "/report-issue"
     },
     {
       icon: (
@@ -217,7 +219,8 @@ const questions = [
       title: "Track Progress",
       description: "Follow the status of your reports from submission to resolution with real-time insights.",
       features: ["Real-time updates", "Status notifications", "Resolution timeline"],
-      gradient: "from-teal-400 to-cyan-500"
+      gradient: "from-teal-400 to-cyan-500",
+      link: "/complaints"
     },
     {
       icon: (
@@ -231,7 +234,8 @@ const questions = [
       title: "Community Voting",
       description: "Upvote issues in your area to help prioritize what matters most to your community.",
       features: ["Issue upvoting", "Trending issues", "Community feedback"],
-      gradient: "from-cyan-400 to-blue-500"
+      gradient: "from-cyan-400 to-blue-500",
+      link: "/community-voting"
     }
   ];
   const steps = [
@@ -440,9 +444,10 @@ const questions = [
 
         <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {features.map((feature, index) => (
-            <div
+            <Link
+              to={feature.link || "#"}
               key={index}
-              className="group relative bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-white/20 dark:border-slate-700/50 hover:shadow-xl dark:hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
+              className="group relative bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-white/20 dark:border-slate-700/50 hover:shadow-xl dark:hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 block"
             >
               <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 dark:group-hover:opacity-10 rounded-2xl transition-opacity duration-500`}></div>
               
@@ -484,13 +489,13 @@ const questions = [
               </div>
 
               <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-emerald-200/50 dark:group-hover:border-emerald-700/50 transition-colors duration-300"></div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
     </section>
 
-        <section className="relative py-24 bg-gradient-to-b from-white via-slate-50/50 to-emerald-50/30 dark:from-slate-900 dark:via-slate-800/50 dark:to-emerald-900/10 overflow-hidden">
+        <section id="how-it-works" className="relative py-24 bg-gradient-to-b from-white via-slate-50/50 to-emerald-50/30 dark:from-slate-900 dark:via-slate-800/50 dark:to-emerald-900/10 overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -left-32 w-64 h-64 bg-gradient-to-r from-emerald-100/30 to-teal-100/30 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-gradient-to-l from-teal-100/30 to-cyan-100/30 dark:from-teal-900/20 dark:to-cyan-900/20 rounded-full blur-3xl"></div>

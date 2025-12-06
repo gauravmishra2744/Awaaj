@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { SignIn, SignUp, useAuth } from '@clerk/clerk-react';
 import { AnimatePresence } from 'framer-motion';
 
 import Home from './Home';
@@ -63,12 +62,14 @@ import AirSeva from './Pages/AirSeva';
 import Train from './Pages/Train';
 import School from './Pages/School';
 import UserMap from './Pages/UserMap';
-import ChatBot from './components/Chatbot/Chatbot';
+
+import OfficerDashboard from './Pages/OfficerDashboard';
 
 
+
+import Unauthorized from './components/Unauthorized';
 
 const App = () => {
-  const { isSignedIn } = useAuth();
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
   const [isProfileComplete, setIsProfileComplete] = useState(false);
@@ -111,16 +112,6 @@ const App = () => {
       <main className="min-h-screen">
         <AnimatePresence mode="wait" initial={false}>
           <Routes location={location} key={location.pathname}>
-            {/* Clerk Auth Routes */}
-            <Route
-              path="/sign-in/*"
-              element={<SignIn routing="path" path="/sign-in" redirectUrl="/" />}
-            />
-            <Route
-              path="/signup/*"
-              element={<SignUp routing="path" path="/signup" redirectUrl="/" />}
-            />
-
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
@@ -130,7 +121,14 @@ const App = () => {
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            <Route path="/report-issue" element={<ReportIssue />} />
+            <Route 
+              path="/report-issue" 
+              element={
+                <PrivateRoute allowedRoles={['user', 'citizen', 'officer', 'admin']}>
+                  <ReportIssue />
+                </PrivateRoute>
+              } 
+            />
             <Route path="/download-android" element={<DownloadAndroid />} />
             <Route path="/download-ios" element={<DownloadIOS />} />
             <Route path="/issues/new" element={<NewIssue />} />
@@ -149,7 +147,7 @@ const App = () => {
             <Route
               path="/profile-setup"
               element={
-                <PrivateRoute allowedRoles={['user', 'admin']}>
+                <PrivateRoute allowedRoles={['user', 'citizen', 'admin']}>
                   <ProfileSetup onComplete={() => setIsProfileComplete(true)}/>
                 </PrivateRoute>
               }
@@ -189,18 +187,31 @@ const App = () => {
               }
             />
             <Route
+              path="/officer/dashboard"
+              element={
+                <PrivateRoute allowedRoles={['officer', 'admin']}>
+                  <OfficerDashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route
               path="/home"
               element={
-                <PrivateRoute allowedRoles={['user', 'admin']}>
+                <PrivateRoute allowedRoles={['user', 'citizen', 'admin']}>
                   <Home />
                 </PrivateRoute>
               }
             />
             <Route
               path="/user/dashboard"
-              element={ renderDashboard()}
+              element={
+                <PrivateRoute allowedRoles={['user', 'citizen', 'admin']}>
+                  {renderDashboard()}
+                </PrivateRoute>
+              }
             />
             {/* Errors */}
+            <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/500" element={<ServerError />} />
             <Route path="*" element={<Error404 />} />
           </Routes>
@@ -208,9 +219,6 @@ const App = () => {
       </main>
 
       {!isAdminRoute && <Footer />}
-      
-      {/* Awaajdo Chatbot */}
-      <ChatBot />
 
     </>
   );

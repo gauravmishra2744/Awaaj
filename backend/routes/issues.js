@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const issueController = require("../controllers/issues");
-const { verifyToken, isAdmin } = require("../middlewares/validate");
+const { verifyToken, isAdmin, isOfficer } = require("../middlewares/validate");
 const { upload } = require("../middlewares/multer.middleware");
 const {
   classifyIssue,
@@ -21,7 +21,7 @@ router.post(
 );
 
 
-router.patch("/:id/status", verifyToken, isAdmin, issueController.updateIssueStatus);
+router.patch("/:id/status", verifyToken, isOfficer, issueController.updateIssueStatus);
 
 // GET: All issues
 router.get("/", issueController.getAllIssues);

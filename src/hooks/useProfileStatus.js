@@ -1,40 +1,40 @@
 import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/clerk-react';
 
 const useProfileStatus = () => {
-  const { user, isSignedIn } = useUser();
   const [isProfileComplete, setIsProfileComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [profileData, setProfileData] = useState(null);
 
   const checkProfileStatus = async () => {
-    if (!isSignedIn || !user) {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
       setIsLoading(false);
+      setProfileData(null);
+      setIsProfileComplete(false);
       return;
     }
 
     try {
-      console.log('Fetching profile data for user:', user.id);
-      // The API endpoint expects clerkUserId, not just id
-      const response = await fetch(`http://localhost:5000/api/profile/${user.id}`, {
-        credentials: 'include',
+      console.log('Fetching profile data...');
+      const response = await fetch(`http://localhost:5000/api/profile/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       
       console.log('Profile API response status:', response.status);
       
       if (response.ok) {
-        // Ensure we can parse JSON; guard against HTML error pages
-        const contentType = response.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) {
-          throw new Error('Invalid response format for profile status');
-        }
         const data = await response.json();
         console.log('Profile data received:', data);
         setProfileData(data);
         setIsProfileComplete(Boolean(data.isProfileComplete));
-      } else if (response.status === 404) {
-        // User doesn't exist in our database yet
-        console.log('User profile not found (404)');
+      } else if (response.status === 401) {
+        // Token invalid or expired
+        console.log('Token invalid or expired');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         setIsProfileComplete(false);
         setProfileData(null);
       } else {
@@ -51,17 +51,27 @@ const useProfileStatus = () => {
 
   useEffect(() => {
     checkProfileStatus();
-  }, [isSignedIn, user]);
+    
+    // Listen for storage events to update if token changes
+    const handleStorageChange = () => {
+      checkProfileStatus();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    // Custom event for login/logout within the same tab
+    window.addEventListener('auth-change', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-change', handleStorageChange);
+    };
+  }, []);
 
   return {
     isProfileComplete,
     isLoading,
     profileData,
-    refetch: () => {
-      setIsLoading(true);
-      // Trigger a re-fetch by changing the dependency
-      checkProfileStatus();
-    }
+    refetch: checkProfileStatus
   };
 };
 

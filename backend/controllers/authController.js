@@ -1,14 +1,12 @@
 const z = require("zod");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const pool = require("../config/mongo.js"); // Assuming you have a pool setup for MongoDB
+const User = require("../models/userModel");
 require("dotenv").config();
 const {asyncHandler}=require("../utils/asyncHandler")
 
-
-
 exports.signup = asyncHandler(async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, role } = req.body;
   if (!username || !email || !password) {
     return res.status(400).json({ error: "All fields are required" });
   }
@@ -24,35 +22,42 @@ exports.signup = asyncHandler(async (req, res) => {
       .regex(/[0-9]/, "At least one number required")
       .regex(/(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/, "At least one special character required")
   });
-  const result = validuserdata.safeParse(req.body);
+  const result = validuserdata.safeParse({ username, email, password });
   if (!result.success) {
     return res.status(400).json({ error: result.error.errors[0].message });
   }
 
-  const role = email.endsWith(process.env.DOMAIN_NAME) ? "admin" : "user";
+  // Determine role: if provided and valid, use it; otherwise default to user.
+  // For security, you might want to restrict who can create 'admin' or 'officer' accounts.
+  // Here we allow it for demonstration or if the email domain matches.
+  let userRole = "citizen";
+  if (role && ["citizen", "officer", "admin"].includes(role)) {
+    userRole = role;
+  } else if (email.endsWith(process.env.DOMAIN_NAME)) {
+    userRole = "admin";
+  }
 
-  const check = await pool.query(
-    "SELECT * FROM users WHERE email = $1 OR username = $2",
-    [email, username]
-  );
+  const existingUser = await User.findOne({ $or: [{ email }, { username }] });
 
-  if (check.rows.length > 0) {
-    const user = check.rows[0];
-    if (user.email === email) {
+  if (existingUser) {
+    if (existingUser.email === email) {
       return res.status(409).json({ error: "Email already registered" });
     }
-    if (user.username === username) {
+    if (existingUser.username === username) {
       return res.status(409).json({ error: "Username already taken" });
     }
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  await pool.query(
-    "INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4)",
-    [username, email, hashedPassword, role]
-  );
+  
+  const newUser = await User.create({
+    username,
+    email,
+    password: hashedPassword,
+    role: userRole
+  });
 
-  return res.status(201).json({ message: "User registered successfully" });
+  return res.status(201).json({ message: "User registered successfully", userId: newUser._id });
 });
 
 exports.login = asyncHandler(async (req, res) => {
@@ -68,8 +73,7 @@ exports.login = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: validation.error.errors[0].message });
   }
 
-  const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-  const user = result.rows[0];
+  const user = await User.findOne({ email });
 
   if (!user) {
     return res.status(401).json({ error: "Invalid credentials" });
@@ -81,12 +85,21 @@ exports.login = asyncHandler(async (req, res) => {
   }
 
   const token = jwt.sign(
-    { email: user.email, role: user.role },
+    { userId: user._id, email: user.email, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: "1h" }
+    { expiresIn: "24h" }
   );
 
-  return res.status(200).json({ token, message: "Login successful" });
+  return res.status(200).json({ 
+    token, 
+    message: "Login successful",
+    user: {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    }
+  });
 });
 
 

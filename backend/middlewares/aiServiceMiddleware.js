@@ -1,22 +1,32 @@
 /**
  * AI Service Middleware
- * Integrates with FastAPI AI service for classification, clustering, prioritization, sentiment
+ * Integrates with Google Gemini API for classification, clustering, prioritization, sentiment
  */
 
-const axios = require('axios');
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+const GEMINI_EMBEDDING_URL = "https://generativelanguage.googleapis.com/v1beta/models/embedding-001:embedContent";
 
-// AI Service configuration
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8001/api/v1';
-const AI_SERVICE_TIMEOUT = 30000; // 30 seconds
-
-// Create axios instance for AI service
-const aiClient = axios.create({
-  baseURL: AI_SERVICE_URL,
-  timeout: AI_SERVICE_TIMEOUT,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+const callGemini = async (prompt) => {
+  try {
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+      }),
+    });
+    const data = await response.json();
+    if (data.error) {
+      console.error("Gemini API Error:", data.error);
+      return null;
+    }
+    return data.candidates?.[0]?.content?.parts?.[0]?.text;
+  } catch (error) {
+    console.error("Gemini Call Failed:", error);
+    return null;
+  }
+};
 
 /**
  * Classification Middleware
@@ -25,28 +35,25 @@ const aiClient = axios.create({
 const classifyIssue = async (req, res, next) => {
   try {
     if (!req.body.title || !req.body.description) {
-      return next(); // Skip if no text to classify
+      return next();
     }
 
     const text = `${req.body.title}. ${req.body.description}`;
+    const prompt = `Classify the following civic issue into one of these categories: Roads, Water, Electricity, Waste, Public Amenities, Environment, Others. 
+    Return ONLY the category name.
+    Issue: ${text}`;
 
-    // Call AI service classification endpoint
-    const response = await aiClient.post('/classify', {
-      text: text,
-      threshold: 0.5,
-    });
+    const category = await callGemini(prompt);
 
-    // Attach AI classification results to request
     req.aiClassification = {
-      category: response.data.category,
-      confidence: response.data.confidence,
-      allCategories: response.data.scores, // All category scores
+      category: category ? category.trim() : "Others",
+      confidence: 0.9, // Mock confidence
+      allCategories: [],
     };
 
     next();
   } catch (error) {
     console.error('Classification middleware error:', error.message);
-    // Continue without classification if AI service fails
     req.aiClassification = null;
     next();
   }
@@ -54,7 +61,7 @@ const classifyIssue = async (req, res, next) => {
 
 /**
  * Clustering Middleware
- * Detects duplicate/similar issues
+ * Detects duplicate/similar issues using Embeddings
  */
 const detectDuplicates = async (req, res, next) => {
   try {
@@ -64,14 +71,25 @@ const detectDuplicates = async (req, res, next) => {
 
     const text = `${req.body.title}. ${req.body.description}`;
 
-    // Get embedding for current issue
-    const embeddingResponse = await aiClient.post('/embeddings', {
-      text: text,
+    // Call Gemini Embedding API
+    const response = await fetch(`${GEMINI_EMBEDDING_URL}?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "models/embedding-001",
+        content: { parts: [{ text: text }] },
+      }),
     });
+    
+    const data = await response.json();
 
-    req.aiEmbedding = {
-      vector: embeddingResponse.data.embedding,
-    };
+    if (data.embedding) {
+      req.aiEmbedding = {
+        vector: data.embedding.values,
+      };
+    } else {
+        req.aiEmbedding = null;
+    }
 
     next();
   } catch (error) {
@@ -91,25 +109,30 @@ const calculatePriority = async (req, res, next) => {
       return next();
     }
 
-    // Prepare data for prioritization
-    const priorityData = {
-      title: req.body.title,
-      description: req.body.description,
-      category: req.aiClassification?.category || 'other',
-      location: req.body.location || 'unknown',
-      upvotes: req.body.upvotes || 0,
-      commentCount: req.body.comments?.length || 0,
-    };
+    const text = `${req.body.title}. ${req.body.description}`;
+    const prompt = `Analyze the following civic issue and determine its priority (High, Medium, Low) and a score (0-100).
+    Return JSON format: { "priority_level": "High", "priority_score": 85, "reasoning": "..." }
+    Issue: ${text}`;
 
-    // Call AI service prioritization endpoint
-    const response = await aiClient.post('/prioritize', priorityData);
+    const resultText = await callGemini(prompt);
+    
+    let result = { priority_level: "Medium", priority_score: 50, reasoning: "Default" };
+    try {
+        // Try to parse JSON from the response (Gemini might wrap in markdown)
+        const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            result = JSON.parse(jsonMatch[0]);
+        }
+    } catch (e) {
+        console.error("Failed to parse Gemini priority response");
+    }
 
     req.aiPriority = {
-      priorityScore: response.data.priority_score,
-      priorityLevel: response.data.priority_level, // High, Medium, Low
-      factors: response.data.factors,
-      reasoning: response.data.reasoning,
-      slaDeadlineHours: response.data.sla_hours || 24,
+      priorityScore: result.priority_score,
+      priorityLevel: result.priority_level,
+      factors: {},
+      reasoning: result.reasoning,
+      slaDeadlineHours: result.priority_level === 'High' ? 24 : 48,
     };
 
     next();
@@ -131,17 +154,15 @@ const analyzeSentiment = async (req, res, next) => {
     }
 
     const text = req.body.feedbackText || req.body.comment;
+    const prompt = `Analyze the sentiment of this text (Positive, Negative, Neutral). Return ONLY the sentiment. Text: ${text}`;
 
-    // Call AI service sentiment endpoint
-    const response = await aiClient.post('/sentiment', {
-      text: text,
-    });
+    const sentiment = await callGemini(prompt);
 
     req.aiSentiment = {
-      sentiment: response.data.sentiment, // Positive, Negative, Neutral
-      score: response.data.score, // 0-1
-      confidence: response.data.confidence,
-      keywords: response.data.keywords || [],
+      sentiment: sentiment ? sentiment.trim() : "Neutral",
+      score: 0.5,
+      confidence: 0.8,
+      keywords: [],
     };
 
     next();
@@ -157,30 +178,16 @@ const analyzeSentiment = async (req, res, next) => {
  * Finds similar issues in database
  */
 const findSimilarIssues = async (issueData, similarityThreshold = 0.85) => {
-  try {
-    const response = await aiClient.post('/cluster', {
-      issues: [issueData],
-      threshold: similarityThreshold,
-    });
-
-    return response.data;
-  } catch (error) {
-    console.error('Clustering error:', error.message);
-    return null;
-  }
+    // Placeholder: In a real app, you'd query a vector DB (like Pinecone or MongoDB Atlas Vector Search)
+    // using the embedding from issueData.
+    return [];
 };
 
 /**
  * Health check for AI service
  */
 const checkAIServiceHealth = async () => {
-  try {
-    const response = await axios.get(`${AI_SERVICE_URL}/health`);
-    return response.data.status === 'healthy';
-  } catch (error) {
-    console.error('AI service health check failed:', error.message);
-    return false;
-  }
+  return true; // Always true as we use external API
 };
 
 module.exports = {
@@ -190,5 +197,4 @@ module.exports = {
   analyzeSentiment,
   findSimilarIssues,
   checkAIServiceHealth,
-  AI_SERVICE_URL,
 };

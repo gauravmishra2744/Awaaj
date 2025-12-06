@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '@clerk/clerk-react';
 import { toast } from 'react-toastify';
 import useProfileStatus from '../hooks/useProfileStatus';
-import csrfManager from '../utils/csrfManager';
 import 'react-toastify/dist/ReactToastify.css';
 
 const ProfileSetup = ({onComplete}) => {
-  const { user } = useUser();
   const navigate = useNavigate();
   const { refetch } = useProfileStatus();
   const [formData, setFormData] = useState({
@@ -20,16 +17,20 @@ const ProfileSetup = ({onComplete}) => {
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState('');
   const [profileSubmitted, setProfileSubmitted] = useState(false);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    if (user) {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
       setFormData(prev => ({
         ...prev,
-        name: user.fullName || '',
-        email: user.primaryEmailAddress?.emailAddress || ''
+        name: parsedUser.name || '',
+        email: parsedUser.email || ''
       }));
     }
-  }, [user]);
+  }, []);
 
   // Prevent redirect back if profile was just submitted
   useEffect(() => {
@@ -61,6 +62,12 @@ const ProfileSetup = ({onComplete}) => {
       return;
     }
 
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('You must be logged in to setup your profile');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -71,8 +78,11 @@ const ProfileSetup = ({onComplete}) => {
         try {
           const fd = new FormData();
           fd.append('image', profileImageFile);
-          const uploadRes = await csrfManager.secureFetch(`http://localhost:5000/api/profile/${user.id}/profile-picture`, {
+          const uploadRes = await fetch(`http://localhost:5000/api/profile/me/profile-picture`, {
             method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
             body: fd
           });
           
@@ -92,7 +102,6 @@ const ProfileSetup = ({onComplete}) => {
 
       // Create or update the user profile in our database
       console.log('Saving profile data:', {
-        clerkUserId: user.id,
         email: formData.email,
         name: formData.name,
         location: formData.location,
@@ -101,12 +110,15 @@ const ProfileSetup = ({onComplete}) => {
       
       localStorage.setItem("profileComplete", "true");
       console.log(localStorage.getItem("profileComplete"));
-      onComplete();
+      if (onComplete) onComplete();
       
-      const profileResponse = await csrfManager.secureFetch('http://localhost:5000/api/profile/create-or-update', {
-        method: 'POST',
+      const profileResponse = await fetch('http://localhost:5000/api/profile/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
-          clerkUserId: user.id,
           email: formData.email,
           name: formData.name,
           location: formData.location,

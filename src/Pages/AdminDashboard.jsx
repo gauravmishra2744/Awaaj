@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Switch from '../DarkModeToggle';
+import csrfManager from "../utils/csrfManager";
+import { toast } from 'react-hot-toast';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -43,43 +45,6 @@ const AdminDashboard = () => {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeRoute, setActiveRoute] = useState('/admin/dashboard');
-
-  // Mock data
-  const mockIssues = [
-    {
-      _id: "1",
-      title: "Pothole on Main Street",
-      description: "Large pothole causing traffic issues near downtown area",
-      phone: "+91 8264192031",
-      email: "ragesh1251@gmail.com",
-      status: "In Progress",
-      priority: "High",
-      dateReported: "2024-08-06",
-      category: "Infrastructure"
-    },
-    {
-      _id: "2",
-      title: "Broken Street Light",
-      description: "Street light not working on Oak Avenue, creating safety concerns",
-      phone: "+91 758393985",
-      email: "kunalar12@gmail.com",
-      status: "Pending",
-      priority: "Medium",
-      dateReported: "2024-08-05",
-      category: "Public Safety"
-    },
-    {
-      _id: "3",
-      title: "Park Maintenance Request",
-      description: "Playground equipment needs repair at Central Park",
-      phone: "+91 8793837454",
-      email: "meerasingh123gmail.com",
-      status: "Resolved",
-      priority: "Low",
-      dateReported: "2024-08-04",
-      category: "Parks & Recreation"
-    }
-  ];
 
   const containerVariants = {
     initial: { opacity: 0 },
@@ -128,10 +93,20 @@ const AdminDashboard = () => {
 
   const fetchIssues = React.useCallback(async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setIssues(mockIssues);
+    try {
+      const response = await csrfManager.secureFetch("http://localhost:5000/api/issues");
+      if (response.ok) {
+        const data = await response.json();
+        setIssues(data);
+      } else {
+        toast.error("Failed to fetch issues");
+      }
+    } catch (error) {
+      console.error("Error fetching issues:", error);
+      toast.error("Error connecting to server");
+    } finally {
       setIsRefreshing(false);
-    }, 1000);
+    }
   }, []);
   useEffect(() => { fetchIssues(); }, [fetchIssues]);
 
@@ -150,12 +125,30 @@ const AdminDashboard = () => {
     rejected: issues.filter(i => i.status === "Rejected").length
   };
 
-  const handleStatusChange = (issueId, newStatus) => {
-    setIssues(prev => 
-      prev.map(issue => 
-        issue._id === issueId ? { ...issue, status: newStatus } : issue
-      )
-    );
+  const handleStatusChange = async (issueId, newStatus) => {
+    try {
+      const response = await csrfManager.secureFetch(`http://localhost:5000/api/issues/${issueId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ newStatus }),
+      });
+
+      if (response.ok) {
+        setIssues(prev => 
+          prev.map(issue => 
+            issue._id === issueId ? { ...issue, status: newStatus } : issue
+          )
+        );
+        toast.success(`Status updated to ${newStatus}`);
+      } else {
+        toast.error("Failed to update status");
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Error updating status");
+    }
   };
 
   return (

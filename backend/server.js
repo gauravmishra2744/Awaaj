@@ -66,8 +66,8 @@ if (cluster.isPrimary) {
     cors({
       origin: [
         "http://localhost:3000",
-        "https://awaaz-phi.vercel.app/login",
-        "https://awaaz-phi.vercel.app/signup",
+        "http://localhost:5173",
+        "https://awaaz-phi.vercel.app",
       ],
       credentials: true,
     })

@@ -31,6 +31,14 @@ const isAdmin = (req, res, next) => {
   }
 };
 
+const isOfficer = (req, res, next) => {
+  if (req.user && (req.user.role === 'officer' || req.user.role === 'admin')) {
+    next();
+  } else {
+    return res.status(403).json({ message: 'Officer access only' });
+  }
+};
+
 
 // Validation result checker
 const validateRequest = (req, res, next) => {
@@ -44,5 +52,6 @@ const validateRequest = (req, res, next) => {
 module.exports = {
   verifyToken,
   isAdmin,
+  isOfficer,
   validateRequest,
 };

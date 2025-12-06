@@ -1,23 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const { 
-  getUserByClerkId, 
+  getUserProfile, 
   updateUserProfile, 
-  createOrUpdateUserProfile,
   uploadProfilePicture
 } = require('../controllers/profileControllers.js');
 const upload = require('../middlewares/upload');
+const { protect } = require('../middlewares/authMiddleware');
 
-// Get user profile by Clerk ID
-router.get('/:clerkUserId', getUserByClerkId);
+// Get current user profile
+router.get('/me', protect, getUserProfile);
 
 // Update user profile
-router.put('/:clerkUserId', updateUserProfile);
-
-// Create or update user profile (for Clerk integration)
-router.post('/create-or-update', createOrUpdateUserProfile);
+router.put('/me', protect, updateUserProfile);
 
 // Upload optional profile picture
-router.post('/:clerkUserId/profile-picture', upload.single('image'), uploadProfilePicture);
+router.post('/me/profile-picture', protect, upload.single('image'), uploadProfilePicture);
 
 module.exports = router;
