@@ -7,82 +7,99 @@ import {
   Clock,
   Edit3,
   Save,
-  Lock,
-  CheckCircle
+  X,
+  CheckCircle,
+  Camera,
+  Phone,
+  Calendar,
+  Activity,
+  TrendingUp,
+  MessageSquare
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import useProfileStatus from '../hooks/useProfileStatus';
+import Navbar from '../components/Navbar';
+
 
 const Profile = () => {
+  const navigate = useNavigate();
   const { profileData, isLoading, refetch } = useProfileStatus();
-  const [user, setUser] = useState({
-    username: '',
-    email: '',
-    location: '',
-    complaints: 0,
-    lastActivity: '',
-  });
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     location: '',
+    phone: ''
   });
+  const [originalData, setOriginalData] = useState({});
   const [errors, setErrors] = useState({});
   const [isEditing, setIsEditing] = useState(false);
-  const [showPasswordRequest, setShowPasswordRequest] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [toastMessage, setToastMessage] = useState(null);
-
-  const showToast = (msg, type = 'success') => {
-    setToastMessage({ msg, type });
-    setTimeout(() => setToastMessage(null), 3000);
-  };
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     if (profileData) {
-      const userData = {
+      const data = {
         username: profileData.name || '',
         email: profileData.email || '',
         location: profileData.location || '',
-        complaints: 7, // This would ideally come from the backend too
-        lastActivity: new Date().toLocaleString(),
+        phone: profileData.phone || ''
       };
-      setUser(userData);
-      setFormData({
-        username: userData.username,
-        email: userData.email,
-        location: userData.location,
-      });
+      setFormData(data);
+      setOriginalData(data);
     }
   }, [profileData]);
 
   const validate = () => {
     const tempErrors = {};
+    
     if (!formData.username.trim()) {
       tempErrors.username = 'Name is required';
+    } else if (formData.username.trim().length < 2) {
+      tempErrors.username = 'Name must be at least 2 characters';
     }
+    
     if (!formData.email.trim()) {
       tempErrors.email = 'Email is required';
     } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
       tempErrors.email = 'Invalid email format';
     }
+    
     if (!formData.location.trim()) {
       tempErrors.location = 'Location is required';
     }
+    
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };
 
+  const handleEdit = () => {
+    setIsEditing(true);
+    setErrors({});
+  };
+
+  const handleCancel = () => {
+    setFormData(originalData);
+    setIsEditing(false);
+    setErrors({});
+  };
+
   const handleSave = async () => {
+    if (!validate()) {
+      return;
+    }
+
     const token = localStorage.getItem('token');
     if (!token) {
-      showToast('You must be logged in to update your profile', 'error');
+      setErrorMessage('You must be logged in to update your profile');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 4000);
       return;
     }
-    if (!validate()) {
-      showToast('Please fix the validation errors before saving', 'error');
-      return;
-    }
+
     setIsSaving(true);
+    
     try {
       const response = await fetch('http://localhost:5000/api/profile/me', {
         method: 'PUT',
@@ -91,328 +108,327 @@ const Profile = () => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          email: formData.email,
           name: formData.username,
-          location: formData.location
+          email: formData.email,
+          location: formData.location,
+          phone: formData.phone
         })
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to update profile');
+        throw new Error(data.error || 'Failed to update profile');
       }
-      
-      const updatedProfile = await response.json();
-      setUser({
-        ...user,
-        username: formData.username,
-        email: formData.email,
-        location: formData.location,
-      });
-      refetch();
-      showToast('Profile updated successfully');
+
+      setOriginalData(formData);
       setIsEditing(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 4000);
+      
+      // Refetch profile data
+      if (refetch) {
+        refetch();
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
-      showToast('Failed to update profile. Please try again.', 'error');
+      setErrorMessage(error.message || 'Failed to update profile. Please try again.');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 4000);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handlePasswordRequest = () => {
-    setShowPasswordRequest(true);
-    setTimeout(() => setShowPasswordRequest(false), 5000);
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error for this field when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-green-50/40 relative overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(16,185,129,0.08)_0%,transparent_50%)] pointer-events-none"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(52,211,153,0.06)_0%,transparent_50%)] pointer-events-none"></div>
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-200/50 to-transparent"></div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-emerald-900/20">
+      <Navbar />
       
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-xl shadow-xl border-2 animate-in slide-in-from-top-2 ${
-          toastMessage.type === 'error' 
-            ? 'bg-red-50 border-red-200 text-red-700' 
-            : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-        }`}>
-          <div className="flex items-center gap-2 font-bold">
-            {toastMessage.type === 'error' ? <AlertTriangle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
-            {toastMessage.msg}
+      {/* Success Toast */}
+      {showSuccess && (
+        <div className="fixed top-20 right-6 z-50 animate-slide-in-right">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border-l-4 border-emerald-500 p-4 flex items-center gap-3 min-w-[300px]">
+            <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-gray-900 dark:text-white">Success!</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Profile updated successfully</p>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="relative z-10 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-3xl mx-auto">
-          {/* Modern card with glass morphism */}
-          <div className="bg-white/60 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/30 overflow-hidden relative">
-            {/* Subtle gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-emerald-50/20 pointer-events-none"></div>
-            
-            {/* Modern header with enhanced design */}
-            <div className="relative bg-gradient-to-br from-emerald-500 via-green-600 to-teal-600 px-8 py-10">
-              {/* Header background pattern */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.1)_0%,transparent_50%)]"></div>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.08)_0%,transparent_50%)]"></div>
-              
-              <div className="relative z-10 flex items-center gap-6">
-                {isLoading ? (
-                  <div className="relative">
-                    <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md border border-white/30 shadow-2xl">
-                      <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-                    </div>
-                    <div className="absolute -inset-2 bg-white/10 rounded-3xl blur-md"></div>
-                  </div>
-                ) : profileData?.profilePictureUrl ? (
-                  <div className="relative">
-                    <div className="w-20 h-20 rounded-3xl overflow-hidden border-2 border-white/40 shadow-2xl">
-                      <img
-                        src={profileData.profilePictureUrl}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="absolute -inset-2 bg-white/10 rounded-3xl blur-md"></div>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md border border-white/30 shadow-2xl">
-                      <User className="w-10 h-10 text-white" />
-                    </div>
-                    <div className="absolute -inset-2 bg-white/10 rounded-3xl blur-md"></div>
-                  </div>
-                )}
-                <div className="text-white">
-                  <h1 className="text-3xl font-bold mb-1 drop-shadow-sm">
-                    {isLoading ? 'Loading...' : user.username || 'User'}
-                  </h1>
-                  <p className="text-emerald-50/90 text-lg font-medium drop-shadow-sm">
-                    {isLoading ? '...' : user.email}
-                  </p>
-                </div>
-              </div>
-              
-              {/* Decorative elements */}
-              <div className="absolute top-4 right-4 w-16 h-16 border border-white/20 rounded-full"></div>
-              <div className="absolute bottom-4 right-8 w-8 h-8 border border-white/20 rounded-full"></div>
+      {/* Error Toast */}
+      {showError && (
+        <div className="fixed top-20 right-6 z-50 animate-slide-in-right">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border-l-4 border-red-500 p-4 flex items-center gap-3 min-w-[300px]">
+            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
             </div>
-
-            {/* Content area */}
-            <div className="relative z-10 p-8">
-              {isLoading ? (
-                <div className="flex justify-center items-center py-16">
-                  <div className="relative">
-                    <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
-                    <div className="absolute inset-0 border-4 border-emerald-100 rounded-full blur-sm"></div>
-                  </div>
-                  <p className="ml-4 text-emerald-700 font-semibold text-lg">Loading profile data...</p>
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  {/* Form fields with modern styling */}
-                  <div className="grid gap-6">
-                    {/* Name Field */}
-                    <div className="space-y-3">
-                      <label className="flex items-center gap-3 text-sm font-bold text-slate-700 uppercase tracking-wide">
-                        <div className="p-2 rounded-xl bg-emerald-100/60">
-                          <User className="w-4 h-4 text-emerald-600" />
-                        </div>
-                        Full Name
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={formData.username}
-                          disabled={!isEditing}
-                          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                          className={`w-full px-6 py-4 rounded-2xl border-2 outline-none transition-all duration-300 text-lg font-medium ${
-                            isEditing
-                              ? 'border-emerald-200 bg-white text-slate-900 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 shadow-lg hover:shadow-xl'
-                              : 'border-slate-200/50 bg-slate-50/50 text-slate-600 shadow-sm'
-                          }`}
-                        />
-                        {isEditing && (
-                          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400/5 to-green-400/5 pointer-events-none"></div>
-                        )}
-                      </div>
-                      {errors.username && (
-                        <p className="text-red-500 text-sm font-medium flex items-center gap-2 px-2">
-                          <AlertTriangle className="w-4 h-4" />
-                          {errors.username}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Email Field */}
-                    <div className="space-y-3">
-                      <label className="flex items-center gap-3 text-sm font-bold text-slate-700 uppercase tracking-wide">
-                        <div className="p-2 rounded-xl bg-blue-100/60">
-                          <Mail className="w-4 h-4 text-blue-600" />
-                        </div>
-                        Email Address
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="email"
-                          value={formData.email}
-                          disabled={!isEditing}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className={`w-full px-6 py-4 rounded-2xl border-2 outline-none transition-all duration-300 text-lg font-medium ${
-                            isEditing
-                              ? 'border-emerald-200 bg-white text-slate-900 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 shadow-lg hover:shadow-xl'
-                              : 'border-slate-200/50 bg-slate-50/50 text-slate-600 shadow-sm'
-                          }`}
-                        />
-                        {isEditing && (
-                          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400/5 to-green-400/5 pointer-events-none"></div>
-                        )}
-                      </div>
-                      {errors.email && (
-                        <p className="text-red-500 text-sm font-medium flex items-center gap-2 px-2">
-                          <AlertTriangle className="w-4 h-4" />
-                          {errors.email}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Location Field */}
-                    <div className="space-y-3">
-                      <label className="flex items-center gap-3 text-sm font-bold text-slate-700 uppercase tracking-wide">
-                        <div className="p-2 rounded-xl bg-purple-100/60">
-                          <MapPin className="w-4 h-4 text-purple-600" />
-                        </div>
-                        Location
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={formData.location}
-                          disabled={!isEditing}
-                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                          className={`w-full px-6 py-4 rounded-2xl border-2 outline-none transition-all duration-300 text-lg font-medium ${
-                            isEditing
-                              ? 'border-emerald-200 bg-white text-slate-900 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-400/20 shadow-lg hover:shadow-xl'
-                              : 'border-slate-200/50 bg-slate-50/50 text-slate-600 shadow-sm'
-                          }`}
-                        />
-                        {isEditing && (
-                          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-400/5 to-green-400/5 pointer-events-none"></div>
-                        )}
-                      </div>
-                      {errors.location && (
-                        <p className="text-red-500 text-sm font-medium flex items-center gap-2 px-2">
-                          <AlertTriangle className="w-4 h-4" />
-                          {errors.location}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Stats Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
-                    <div className="relative group">
-                      <div className="absolute inset-0 bg-gradient-to-br from-red-400/20 to-orange-400/20 rounded-2xl blur-md group-hover:blur-lg transition-all duration-300"></div>
-                      <div className="relative bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-100 rounded-2xl p-6 hover:shadow-lg transition-all duration-300">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="p-2.5 bg-red-100 rounded-xl">
-                            <AlertTriangle className="w-5 h-5 text-red-600" />
-                          </div>
-                          <span className="text-sm font-bold text-red-700 uppercase tracking-wide">Total Complaints</span>
-                        </div>
-                        <div className="text-3xl font-bold text-red-700">{user.complaints}</div>
-                      </div>
-                    </div>
-
-                    <div className="relative group">
-                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-green-400/20 rounded-2xl blur-md group-hover:blur-lg transition-all duration-300"></div>
-                      <div className="relative bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-100 rounded-2xl p-6 hover:shadow-lg transition-all duration-300">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="p-2.5 bg-emerald-100 rounded-xl">
-                            <Clock className="w-5 h-5 text-emerald-600" />
-                          </div>
-                          <span className="text-sm font-bold text-emerald-700 uppercase tracking-wide">Last Active</span>
-                        </div>
-                        <div className="text-sm font-semibold text-emerald-700 leading-tight">
-                          {user.lastActivity || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-4 pt-8 border-t border-slate-200/50">
-                    {isEditing ? (
-                      <button
-                        type="button"
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="relative group flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-700 to-green-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <div className="relative z-10 flex items-center gap-3">
-                          {isSaving ? (
-                            <>
-                              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                              Saving Changes...
-                            </>
-                          ) : (
-                            <>
-                              <Save className="w-5 h-5" />
-                              Save Changes
-                            </>
-                          )}
-                        </div>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setIsEditing(true)}
-                        className="relative group flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-700 to-green-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <div className="relative z-10 flex items-center gap-3">
-                          <Edit3 className="w-5 h-5" />
-                          Edit Profile
-                        </div>
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={handlePasswordRequest}
-                      className="relative group flex items-center justify-center gap-3 px-8 py-4 bg-white/80 text-emerald-700 rounded-2xl font-bold text-lg border-2 border-emerald-200 shadow-md hover:shadow-lg hover:bg-emerald-50 transition-all duration-300 overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-emerald-50 to-green-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <div className="relative z-10 flex items-center gap-3">
-                        <Lock className="w-5 h-5" />
-                        Change Password
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Password Reset Success Message */}
-              {showPasswordRequest && (
-                <div className="mt-6 relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-green-400/20 rounded-2xl blur-md"></div>
-                  <div className="relative bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-2xl p-6 flex items-center gap-4 animate-in slide-in-from-bottom-4 duration-500">
-                    <div className="p-2 bg-emerald-100 rounded-xl">
-                      <CheckCircle className="w-6 h-6 text-emerald-600" />
-                    </div>
-                    <div>
-                      <p className="text-emerald-800 font-bold text-lg">Success!</p>
-                      <p className="text-emerald-700 font-medium">Password reset link sent to your email address</p>
-                    </div>
-                  </div>
-                </div>
-              )}
+            <div className="flex-1">
+              <p className="font-bold text-gray-900 dark:text-white">Error</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{errorMessage}</p>
             </div>
           </div>
         </div>
+      )}
+
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-2">
+            My Profile
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400">
+            Manage your account information and preferences
+          </p>
+        </div>
+
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400 font-medium">Loading your profile...</p>
+          </div>
+        ) : (
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Left Column - Profile Card */}
+            <div className="lg:col-span-1">
+              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6 sticky top-24">
+                {/* Profile Picture */}
+                <div className="flex flex-col items-center mb-6">
+                  <div className="relative group mb-4">
+                    {profileData?.profilePictureUrl ? (
+                      <img
+                        src={profileData.profilePictureUrl}
+                        alt="Profile"
+                        className="w-32 h-32 rounded-full object-cover border-4 border-emerald-500 shadow-lg"
+                      />
+                    ) : (
+                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center border-4 border-emerald-500 shadow-lg">
+                        <User className="w-16 h-16 text-white" />
+                      </div>
+                    )}
+                    <button className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-lg transition-all duration-300 opacity-0 group-hover:opacity-100">
+                      <Camera className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <h2 className="text-2xl font-black text-gray-900 dark:text-white text-center mb-1">
+                    {formData.username || 'User'}
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">{formData.email}</p>
+                  
+                  <div className="mt-4 px-4 py-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-full">
+                    <span className="text-emerald-700 dark:text-emerald-400 font-bold text-sm">Active Member</span>
+                  </div>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="space-y-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5 text-emerald-600" />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Issues Reported</span>
+                    </div>
+                    <span className="font-black text-emerald-600">0</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-emerald-600" />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Resolved</span>
+                    </div>
+                    <span className="font-black text-emerald-600">0</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-emerald-600" />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Member Since</span>
+                    </div>
+                    <span className="font-bold text-gray-900 dark:text-white text-sm">2024</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Profile Form */}
+            <div className="lg:col-span-2">
+              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8">
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white">Personal Information</h3>
+                  {!isEditing ? (
+                    <button
+                      onClick={handleEdit}
+                      className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                      Edit Profile
+                    </button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleCancel}
+                        className="flex items-center gap-2 px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-bold transition-all duration-300"
+                      >
+                        <X className="w-4 h-4" />
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isSaving ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4" />
+                            Save Changes
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-6">
+                  {/* Full Name */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                      <User className="w-4 h-4 text-emerald-600" />
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.username}
+                      onChange={(e) => handleChange('username', e.target.value)}
+                      disabled={!isEditing}
+                      className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all duration-300 ${
+                        isEditing
+                          ? 'border-emerald-300 focus:border-emerald-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white'
+                          : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 cursor-not-allowed'
+                      } ${errors.username ? 'border-red-500' : ''}`}
+                      placeholder="Enter your full name"
+                    />
+                    {errors.username && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="w-4 h-4" />
+                        {errors.username}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                      <Mail className="w-4 h-4 text-emerald-600" />
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleChange('email', e.target.value)}
+                      disabled={!isEditing}
+                      className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all duration-300 ${
+                        isEditing
+                          ? 'border-emerald-300 focus:border-emerald-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white'
+                          : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 cursor-not-allowed'
+                      } ${errors.email ? 'border-red-500' : ''}`}
+                      placeholder="Enter your email"
+                    />
+                    {errors.email && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="w-4 h-4" />
+                        {errors.email}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Location */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                      <MapPin className="w-4 h-4 text-emerald-600" />
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.location}
+                      onChange={(e) => handleChange('location', e.target.value)}
+                      disabled={!isEditing}
+                      className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all duration-300 ${
+                        isEditing
+                          ? 'border-emerald-300 focus:border-emerald-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white'
+                          : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 cursor-not-allowed'
+                      } ${errors.location ? 'border-red-500' : ''}`}
+                      placeholder="Enter your location"
+                    />
+                    {errors.location && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="w-4 h-4" />
+                        {errors.location}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Phone (Optional) */}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                      <Phone className="w-4 h-4 text-emerald-600" />
+                      Phone Number <span className="text-xs text-gray-500">(Optional)</span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => handleChange('phone', e.target.value)}
+                      disabled={!isEditing}
+                      className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all duration-300 ${
+                        isEditing
+                          ? 'border-emerald-300 focus:border-emerald-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white'
+                          : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 cursor-not-allowed'
+                      }`}
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                </div>
+
+                {/* Additional Info */}
+                <div className="mt-8 p-6 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-2xl border border-emerald-200 dark:border-emerald-800">
+                  <h4 className="font-black text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-emerald-600" />
+                    Account Activity
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Account Status:</span>
+                      <span className="font-bold text-emerald-600">Active</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Profile Completion:</span>
+                      <span className="font-bold text-gray-900 dark:text-white">100%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Last Updated:</span>
+                      <span className="font-bold text-gray-900 dark:text-white">Just now</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
