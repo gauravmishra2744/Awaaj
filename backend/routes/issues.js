@@ -8,7 +8,15 @@ const {
   detectDuplicates,
   calculatePriority,
   analyzeSentiment,
+  analyzeImageWithML,
 } = require("../middlewares/aiServiceMiddleware");
+
+// Image analysis endpoint
+router.post(
+  "/analyze-image",
+  upload.single("image"),
+  analyzeImageWithML
+);
 
 // Create issue with AI analysis
 router.post(

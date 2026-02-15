@@ -5,23 +5,40 @@ const { uploadOnCloudinary } = require("../utils/cloudinary.js");
 const mongoose = require('mongoose');
 
 const createIssue = asyncHandler(async (req, res) => {
-  const { title, description, phone, email, notifyByEmail, location } = req.body;
+  let { title, description, phone, email, notifyByEmail, location } = req.body;
 
-  if (!title || !description || !email) {
-    return res.status(400).json({ error: "Title, description, and email are required" });
+  // Allow missing title/description if file is present
+  if ((!title || !description) && !req.file) {
+    return res.status(400).json({ error: "Title and description are required unless an image is uploaded." });
   }
+  
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  // Use defaults if missing but file exists
+  if (!title && req.file) title = "Image Report";
+  if (!description && req.file) description = "Issue reported via image upload.";
 
   let fileUrl = null;
 
   if (req.file) {
-    const localFilePath = req.file?.path;
-    const cloudinaryResponse = await uploadOnCloudinary(localFilePath);
-    console.log(cloudinaryResponse);
+    try {
+      const localFilePath = req.file?.path;
+      const cloudinaryResponse = await uploadOnCloudinary(localFilePath);
+      console.log('Cloudinary response:', cloudinaryResponse);
 
-    if (cloudinaryResponse) {
-      fileUrl = cloudinaryResponse.secure_url;
-    } else {
-      return res.status(500).json({ error: "Failed to upload file to Cloudinary" });
+      if (cloudinaryResponse && cloudinaryResponse.secure_url) {
+        fileUrl = cloudinaryResponse.secure_url;
+      } else {
+        console.warn('Cloudinary upload failed, saving file path locally');
+        // Save local path if Cloudinary fails
+        fileUrl = `/uploads/${req.file.filename}`;
+      }
+    } catch (error) {
+      console.error('Error uploading to Cloudinary:', error);
+      // Continue without image if upload fails
+      fileUrl = req.file ? `/uploads/${req.file.filename}` : null;
     }
   }
 

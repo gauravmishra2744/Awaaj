@@ -128,26 +128,30 @@ const Navbar = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-green-100 dark:border-green-900/20 shadow-sm">
+    <header className="sticky top-0 z-50 w-full bg-white/90 dark:bg-slate-950/90 backdrop-blur-2xl border-b border-awaaj-primary/10 dark:border-awaaj-accent/20 shadow-awaaj">
       <div className="container mx-auto px-4 lg:px-6">
-        <div className="flex h-16 items-center justify-between">
+        <div className="flex h-20 items-center justify-between">
           
           <div className="flex items-center">
             <button 
               onClick={() => { setMobileMenuOpen(false); navigate('/'); }} 
               className="flex items-center gap-3 group"
             >
-              <div className="relative flex items-center gap-2">
+              <div className="relative flex items-center gap-3 voice-wave">
                 <img 
                   src={awaazLogo} 
                   alt="Awaaz logo" 
-                  className="h-12 w-12 transition-transform duration-300 group-hover:scale-105" 
+                  className="h-14 w-14 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 drop-shadow-lg" 
                 />
+                <div className="flex flex-col">
+                  <span className="text-2xl font-display font-bold text-gradient-awaaj">Awaaj</span>
+                  <span className="text-xs font-medium text-awaaj-muted dark:text-gray-400">आवाज़ - Voice of People</span>
+                </div>
               </div>
             </button>
           </div>
 
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-2">
             {navLinks.map((navItem) => {
               const Icon = navItem.icon;
               const isActive = location.pathname === navItem.href;
@@ -155,17 +159,17 @@ const Navbar = () => {
                 <Link
                   key={navItem.title}
                   to={navItem.href}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-300 group relative overflow-hidden ${
+                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-full transition-all duration-300 group relative overflow-hidden ${
                     isActive
-                      ? 'text-green-700 dark:text-green-300 bg-white/60 dark:bg-white/10 backdrop-blur-lg border border-green-200/50 dark:border-green-700/50'
-                      : 'text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/50'
+                      ? 'text-white bg-gradient-awaaj shadow-awaaj'
+                      : 'text-gray-700 dark:text-gray-300 hover:text-awaaj-primary dark:hover:text-awaaj-accent hover:bg-awaaj-primary/5 dark:hover:bg-awaaj-accent/10'
                   }`}
                 >
                   {isActive && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20 dark:from-green-500/20 dark:to-emerald-500/20 rounded-xl" />
+                    <div className="absolute inset-0 bg-gradient-awaaj rounded-full animate-glow" />
                   )}
                   <Icon className={`w-4 h-4 transition-transform duration-300 relative z-10 ${
-                    isActive ? 'scale-110' : 'group-hover:scale-110'
+                    isActive ? 'scale-110' : 'group-hover:scale-110 group-hover:rotate-12'
                   }`} />
                   <span className="relative z-10">{navItem.title}</span>
                 </Link>
@@ -175,23 +179,23 @@ const Navbar = () => {
 
           <button
             id="mobile-nav-toggle"
-            className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-green-50 dark:bg-green-950/50 hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors duration-300 group"
+            className="lg:hidden flex items-center justify-center w-11 h-11 rounded-full bg-gradient-awaaj hover:shadow-awaaj transition-all duration-300 group"
             aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
             aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen((open) => !open)}
           >
             {mobileMenuOpen ? (
-              <X className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <X className="h-5 w-5 text-white" />
             ) : (
-              <Menu className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <Menu className="h-5 w-5 text-white" />
             )}
           </button>
 
-          <div className="hidden lg:flex items-center gap-5">
+          <div className="hidden lg:flex items-center gap-4">
             
             <button
               onClick={handleSOSClick}
-              className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-xl shadow-lg hover:shadow-red-200 dark:hover:shadow-red-900/50 transform hover:scale-105 transition-all duration-300 group"
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 rounded-full shadow-lg hover:shadow-xl hover:shadow-red-500/50 transform hover:scale-105 transition-all duration-300 group animate-pulse-slow"
               title="Emergency SOS"
               aria-label="Emergency SOS Button"
             >
@@ -199,48 +203,48 @@ const Navbar = () => {
               <span>SOS</span>
             </button>
 
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-green-50 dark:bg-green-950/50 hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors duration-300">
+            <div className="flex items-center justify-center w-11 h-11 rounded-full glass-awaaj hover:bg-awaaj-primary/10 transition-all duration-300">
               <Switch />
             </div>
 
             <div className="relative" ref={rightDropdownRef}>
               <button
                 onClick={() => setRightDropdownOpen(!rightDropdownOpen)}
-                className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-green-200 dark:hover:shadow-green-900/50 transform hover:scale-105 transition-all duration-300"
+                className="flex items-center justify-center w-11 h-11 rounded-full bg-gradient-awaaj hover:shadow-awaaj-lg text-white transform hover:scale-105 transition-all duration-300 hover:rotate-12"
                 aria-label="Open user menu"
               >
                 <User className="h-5 w-5" />
               </button>
 
               {rightDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-green-100 dark:border-green-900/20 z-50 overflow-hidden">
-                  <div className="p-2">
+                <div className="absolute right-0 mt-3 w-72 rounded-3xl bg-white dark:bg-slate-900 shadow-awaaj-lg border border-awaaj-primary/20 dark:border-awaaj-accent/20 z-50 overflow-hidden animate-scale-in">
+                  <div className="p-3">
                     
                     <button
                       onClick={() => { setRightDropdownOpen(false); navigate('/civic-education'); }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/50 rounded-xl transition-all duration-200 group"
+                      className="w-full flex items-center gap-3 px-4 py-3.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-awaaj-primary dark:hover:text-awaaj-accent hover:bg-awaaj-primary/5 dark:hover:bg-awaaj-accent/10 rounded-2xl transition-all duration-200 group"
                     >
-                      <BookOpen className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                      <BookOpen className="w-5 h-5 group-hover:scale-110 group-hover:rotate-12 transition-all duration-200" />
                       <span>Civic Education & Rights</span>
                     </button>
                     
                     {!token ? (
                       <button
                         onClick={() => { setRightDropdownOpen(false); navigate('/login'); }}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl transition-all duration-200 group mt-2"
+                        className="w-full flex items-center justify-center gap-3 px-4 py-3.5 text-sm font-bold text-white bg-gradient-awaaj hover:shadow-awaaj rounded-2xl transition-all duration-200 group mt-2"
                       >
-                        <User className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                        <User className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
                         <span>Login</span>
                       </button>
                     ) : (
                       <>
-                        <div className="border-t border-green-100 dark:border-green-900/20 my-2"></div>
+                        <div className="border-t border-awaaj-primary/10 dark:border-awaaj-accent/20 my-2"></div>
                         
                         <button
                           onClick={() => { setRightDropdownOpen(false); navigate('/profile'); }}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/50 rounded-xl transition-all duration-200 group"
+                          className="w-full flex items-center gap-3 px-4 py-3.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-awaaj-primary dark:hover:text-awaaj-accent hover:bg-awaaj-primary/5 dark:hover:bg-awaaj-accent/10 rounded-2xl transition-all duration-200 group"
                         >
-                          <User className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                          <User className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
                           <span>Profile</span>
                         </button>
                         
@@ -251,21 +255,21 @@ const Navbar = () => {
                             else if (isOfficer) navigate('/officer/dashboard');
                             else navigate('/user/dashboard');
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/50 rounded-xl transition-all duration-200 group"
+                          className="w-full flex items-center gap-3 px-4 py-3.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-awaaj-primary dark:hover:text-awaaj-accent hover:bg-awaaj-primary/5 dark:hover:bg-awaaj-accent/10 rounded-2xl transition-all duration-200 group"
                         >
                           {isAdmin ? (
-                            <Shield className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                            <Shield className="w-5 h-5 group-hover:scale-110 group-hover:rotate-12 transition-all duration-200" />
                           ) : (
-                            <LayoutDashboard className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                            <LayoutDashboard className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
                           )}
                           <span>Dashboard</span>
                         </button>
                         
                         <button
                           onClick={handleLogout}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:text-white hover:bg-gradient-to-r from-red-500 to-red-600 rounded-xl transition-all duration-200 group mt-2"
+                          className="w-full flex items-center justify-center gap-3 px-4 py-3.5 text-sm font-bold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-2xl transition-all duration-200 group mt-2"
                         >
-                          <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                          <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
                           <span>Logout</span>
                         </button>
                       </>
@@ -281,7 +285,7 @@ const Navbar = () => {
       {mobileMenuOpen && (
         <>
           <div
-            className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+            className="lg:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-40 animate-fade-in"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
@@ -289,17 +293,26 @@ const Navbar = () => {
           <div className="lg:hidden fixed inset-x-0 top-0 z-50">
             <nav 
               id="mobile-nav-panel" 
-              className="flex flex-col w-full min-h-screen bg-white dark:bg-slate-950 pt-20 px-6 pb-6"
+              className="flex flex-col w-full min-h-screen bg-gradient-to-br from-white via-awaaj-light to-awaaj-primary/5 dark:from-slate-950 dark:via-slate-900 dark:to-awaaj-dark pt-24 px-6 pb-6 animate-slide-down"
             >
               <button
-                className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-xl bg-green-50 dark:bg-green-950/50 hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors duration-300"
+                className="absolute top-6 right-6 w-12 h-12 flex items-center justify-center rounded-full bg-gradient-awaaj text-white shadow-awaaj hover:shadow-awaaj-lg transition-all duration-300 hover:rotate-90"
                 aria-label="Close navigation menu"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <X className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <X className="w-5 h-5" />
               </button>
 
-              <div className="space-y-2 mb-8">
+              {/* Awaaj Logo in Mobile Menu */}
+              <div className="flex items-center gap-3 mb-8 pb-6 border-b border-awaaj-primary/20">
+                <img src={awaazLogo} alt="Awaaz logo" className="h-16 w-16 animate-float" />
+                <div>
+                  <h2 className="text-2xl font-display font-bold text-gradient-awaaj">Awaaj</h2>
+                  <p className="text-sm text-awaaj-muted font-hindi">आवाज़ - Voice of People</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 mb-8">
                 {navLinks.map((navItem) => {
                   const Icon = navItem.icon;
                   const isActive = location.pathname === navItem.href;
@@ -308,17 +321,17 @@ const Navbar = () => {
                       key={navItem.title}
                       to={navItem.href}
                       onClick={() => handleNav()}
-                      className={`flex items-center gap-4 px-4 py-4 text-lg font-medium rounded-xl transition-all duration-300 group relative overflow-hidden ${
+                      className={`flex items-center gap-4 px-5 py-4 text-base font-bold rounded-2xl transition-all duration-300 group relative overflow-hidden ${
                         isActive
-                          ? 'text-green-700 dark:text-green-300 bg-white/60 dark:bg-white/10 backdrop-blur-lg border border-green-200/50 dark:border-green-700/50 shadow-lg shadow-green-100/50 dark:shadow-green-900/30'
-                          : 'text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/50'
+                          ? 'text-white bg-gradient-awaaj shadow-awaaj'
+                          : 'text-gray-700 dark:text-gray-300 hover:text-awaaj-primary dark:hover:text-awaaj-accent hover:bg-awaaj-primary/10 dark:hover:bg-awaaj-accent/10'
                       }`}
                     >
                       {isActive && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20 dark:from-green-500/20 dark:to-emerald-500/20 rounded-xl" />
+                        <div className="absolute inset-0 bg-gradient-awaaj rounded-2xl animate-glow" />
                       )}
-                      <Icon className={`w-5 h-5 transition-transform duration-300 relative z-10 ${
-                        isActive ? 'scale-110' : 'group-hover:scale-110'
+                      <Icon className={`w-6 h-6 transition-transform duration-300 relative z-10 ${
+                        isActive ? 'scale-110' : 'group-hover:scale-110 group-hover:rotate-12'
                       }`} />
                       <span className="relative z-10">{navItem.title}</span>
                     </Link>
@@ -331,9 +344,9 @@ const Navbar = () => {
                   <>
                     <button
                       onClick={() => handleNav(() => navigate('/profile'))}
-                      className="w-full flex items-center gap-4 px-6 py-4 text-base font-medium text-gray-700 dark:text-gray-300 bg-green-50 dark:bg-green-950/50 hover:bg-green-100 dark:hover:bg-green-900/50 rounded-xl transition-all duration-300 group"
+                      className="w-full flex items-center gap-4 px-5 py-4 text-base font-bold text-gray-700 dark:text-gray-300 glass-awaaj hover:bg-awaaj-primary/10 dark:hover:bg-awaaj-accent/10 rounded-2xl transition-all duration-300 group"
                     >
-                      <User className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                      <User className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
                       <span>Profile</span>
                     </button>
 
@@ -343,12 +356,12 @@ const Navbar = () => {
                         else if (isOfficer) navigate('/officer/dashboard');
                         else navigate('/user/dashboard');
                       })}
-                      className="w-full flex items-center gap-4 px-6 py-4 text-base font-medium text-gray-700 dark:text-gray-300 bg-green-50 dark:bg-green-950/50 hover:bg-green-100 dark:hover:bg-green-900/50 rounded-xl transition-all duration-300 group"
+                      className="w-full flex items-center gap-4 px-5 py-4 text-base font-bold text-gray-700 dark:text-gray-300 glass-awaaj hover:bg-awaaj-primary/10 dark:hover:bg-awaaj-accent/10 rounded-2xl transition-all duration-300 group"
                     >
                       {isAdmin ? (
-                        <Shield className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                        <Shield className="w-6 h-6 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300" />
                       ) : (
-                        <LayoutDashboard className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                        <LayoutDashboard className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
                       )}
                       <span>Dashboard</span>
                     </button>
@@ -357,45 +370,46 @@ const Navbar = () => {
 
                 <button
                   onClick={() => handleNav(handleSOSClick)}
-                  className="w-full flex items-center justify-center gap-3 px-6 py-4 text-base font-bold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300 group"
+                  className="w-full flex items-center justify-center gap-3 px-5 py-4 text-base font-bold text-white bg-gradient-to-r from-red-500 via-red-600 to-red-700 hover:from-red-600 hover:via-red-700 hover:to-red-800 rounded-2xl shadow-lg hover:shadow-xl hover:shadow-red-500/50 transform hover:scale-105 transition-all duration-300 group animate-pulse-slow"
                 >
-                  <AlertTriangle className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+                  <AlertTriangle className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />
                   <span>Emergency SOS</span>
                 </button>
 
                 {token ? (
                   <button
                     onClick={() => handleNav(handleLogout)}
-                    className="w-full flex items-center gap-4 px-6 py-4 text-base font-medium text-red-600 dark:text-red-400 hover:text-white hover:bg-gradient-to-r from-red-500 to-red-600 rounded-xl transition-all duration-300 group"
+                    className="w-full flex items-center justify-center gap-4 px-5 py-4 text-base font-bold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group"
                   >
-                    <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                    <LogOut className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
                     <span>Logout</span>
                   </button>
                 ) : (
                   <>
                     <button
                       onClick={() => handleNav(() => navigate('/login'))}
-                      className="w-full flex items-center gap-4 px-6 py-4 text-base font-medium text-gray-700 dark:text-gray-300 border-2 border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-950/50 rounded-xl transition-all duration-300 group"
+                      className="w-full flex items-center justify-center gap-4 px-5 py-4 text-base font-bold text-awaaj-primary dark:text-awaaj-accent border-2 border-awaaj-primary dark:border-awaaj-accent hover:bg-awaaj-primary/10 dark:hover:bg-awaaj-accent/10 rounded-2xl transition-all duration-300 group"
                     >
-                      <User className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                      <User className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
                       <span>Login</span>
                     </button>
                     
                     <button
                       onClick={() => handleNav(() => navigate('/signup'))}
-                      className="w-full flex items-center gap-4 px-6 py-4 text-base font-medium text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300 group"
+                      className="w-full flex items-center justify-center gap-4 px-5 py-4 text-base font-bold text-white bg-gradient-awaaj hover:shadow-awaaj-lg rounded-2xl shadow-awaaj transform hover:scale-105 transition-all duration-300 group"
                     >
-                      <User className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                      <User className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
                       <span>Get Started</span>
                     </button>
                   </>
                 )}
               </div>
 
-              <div className="flex items-center justify-center pt-6 mt-auto border-t border-green-100 dark:border-green-900/20">
-                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-green-50 dark:bg-green-950/50">
+              <div className="flex items-center justify-center gap-4 pt-6 mt-auto border-t border-awaaj-primary/20">
+                <div className="flex items-center justify-center w-14 h-14 rounded-full glass-awaaj">
                   <Switch />
                 </div>
+                <p className="text-xs text-awaaj-muted">© 2025 Awaaj Platform</p>
               </div>
             </nav>
           </div>

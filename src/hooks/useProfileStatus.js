@@ -9,17 +9,22 @@ const useProfileStatus = () => {
     const token = localStorage.getItem('token');
     
     if (!token) {
+      console.log('No token found in localStorage');
       setIsLoading(false);
       setProfileData(null);
       setIsProfileComplete(false);
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      console.log('Fetching profile data...');
+      console.log('Fetching profile data with token...');
       const response = await fetch(`http://localhost:5000/api/profile/me`, {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
       
@@ -32,18 +37,27 @@ const useProfileStatus = () => {
         setIsProfileComplete(Boolean(data.isProfileComplete));
       } else if (response.status === 401) {
         // Token invalid or expired
-        console.log('Token invalid or expired');
+        console.log('Token invalid or expired - removing from storage');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setIsProfileComplete(false);
         setProfileData(null);
       } else {
-        console.error('Failed to fetch profile status, status code:', response.status);
+        // Other error - try to get error message
+        try {
+          const errorData = await response.json();
+          console.error('Failed to fetch profile:', errorData);
+        } catch (e) {
+          console.error('Failed to fetch profile, status code:', response.status);
+        }
         setIsProfileComplete(false);
+        setProfileData(null);
       }
     } catch (error) {
-      console.error('Error checking profile status:', error);
+      console.error('Network error checking profile status:', error.message);
+      console.error('Full error:', error);
       setIsProfileComplete(false);
+      setProfileData(null);
     } finally {
       setIsLoading(false);
     }

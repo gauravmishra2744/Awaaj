@@ -62,6 +62,7 @@ import AirSeva from './Pages/AirSeva';
 import Train from './Pages/Train';
 import School from './Pages/School';
 import UserMap from './Pages/UserMap';
+import DebugProfile from './Pages/DebugProfile';
 
 import OfficerDashboard from './Pages/OfficerDashboard';
 
@@ -82,8 +83,8 @@ const App = () => {
   }, []);
 
   const renderDashboard = () => {
-
-    if (!isProfileComplete) return <Navigate to="/profile-setup" replace />;
+    // Removed forced redirect - user can choose to complete profile
+    // if (!isProfileComplete) return <Navigate to="/profile-setup" replace />;
 
     return <UserDashboard />;
   };
@@ -138,6 +139,7 @@ const App = () => {
             <Route path="/community-voting" element={<CommunityVotingPage />} />
             <Route path="/voting-system" element={<VotingSystem />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/debug-profile" element={<DebugProfile />} />
             <Route path='/electricity' element={<Electricity/>}/>
             <Route path='/budget' element={<Budget/>}/>
             <Route path='/train' element={<Train/>}/>

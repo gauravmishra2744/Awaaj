@@ -23,7 +23,7 @@ import {
   Youtube,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import logoF from "../assets/logo.png";
+import awaazLogo from "../assets/awaaz-logo.svg";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -350,29 +350,29 @@ const Footer = () => {
               >
                 <div className="relative">
                   <div
-                    className={`absolute -inset-3 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-full opacity-0 group-hover:opacity-15 blur-lg transition-all duration-500 ${
-                      hoveredItem === "logo" ? "opacity-15" : ""
+                    className={`absolute -inset-3 bg-gradient-awaaj rounded-full opacity-0 group-hover:opacity-20 blur-lg transition-all duration-500 ${
+                      hoveredItem === "logo" ? "opacity-20" : ""
                     }`}
                   ></div>
                   <img
-                    src={logoF}
+                    src={awaazLogo}
                     alt="Awaaz Logo"
-                    className="w-12 h-auto transition-all duration-500 group-hover:scale-110 group-hover:rotate-3"
+                    className="w-14 h-14 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 drop-shadow-awaaj"
                   />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent bg-300% animate-gradient">
-                    AWAAZ
+                  <h2 className="text-2xl font-display font-black text-gradient-awaaj">
+                    AWAAJ
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
-                    Civic Engagement Platform
+                  <p className="text-xs text-awaaj-muted dark:text-slate-400 font-semibold font-hindi mt-1">
+                    आवाज़ - Voice of People
                   </p>
                 </div>
               </div>
 
               <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed max-w-xs">
-                Empowering citizens through technology. Stay informed, make
-                better decisions, and engage with civic life.
+                Empowering every citizen's voice through technology.
+                Building stronger communities, one voice at a time.
               </p>
             </div>
 
@@ -389,7 +389,7 @@ const Footer = () => {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`group relative w-10 h-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/20 hover:border-emerald-300/50 dark:hover:border-emerald-500/50 ${social.color}`}
+                    className={`group relative w-10 h-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 hover:shadow-awaaj hover:border-awaaj-primary/50 dark:hover:border-awaaj-accent/50 ${social.color}`}
                     title={social.description}
                     aria-label={`Visit our ${social.name} page`}
                     onMouseEnter={() => setHoveredItem(social.name)}
@@ -412,10 +412,10 @@ const Footer = () => {
               onMouseEnter={() => setHoveredItem("contact")}
               onMouseLeave={() => setHoveredItem(null)}
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <div className="w-8 h-8 bg-gradient-awaaj rounded-lg flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-awaaj">
                 <Mail className="w-4 h-4 text-white" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-300">
+              <h3 className="text-lg font-display font-bold text-slate-900 dark:text-white group-hover:text-awaaj-primary dark:group-hover:text-awaaj-accent transition-colors duration-300">
                 Contact
               </h3>
             </div>
@@ -661,13 +661,13 @@ const Footer = () => {
               <div className="flex items-center space-x-1">
                 <span>Built by</span>
                 <a
-                  href="https://github.com/HarshS16"
+                  href="https://github.com/gauravmishra2744"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group inline-flex items-center space-x-1 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-semibold transition-all duration-300 hover:scale-105"
-                  aria-label="Visit Harsh S.'s GitHub profile"
+                  className="group inline-flex items-center space-x-1 text-awaaj-primary hover:text-awaaj-accent dark:text-awaaj-accent dark:hover:text-awaaj-primary font-bold transition-all duration-300 hover:scale-105"
+                  aria-label="Visit Gaurav Mishra's GitHub profile"
                 >
-                  <span>Harsh S.</span>
+                  <span>Gaurav Mishra</span>
                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all duration-300" />
                 </a>
               </div>

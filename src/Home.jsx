@@ -9,7 +9,7 @@ import Navbar from "./components/Navbar";
 
 import TestimonialCarousel from "./components/TestimonialCarousel";
 import { AnimatePresence } from "framer-motion";
-import favv from './favv.svg';
+import awaazLogo from './assets/awaaz-logo.svg';
 import EnhancedQRCode from "./components/EnhancedQRCode";
 import ProfileCompletionBanner from "./components/ProfileCompletionBanner";
 import useProfileStatus from "./hooks/useProfileStatus";
@@ -42,6 +42,8 @@ function Home() {
   }, []);
 
   // Redirect incomplete profiles to profile-setup
+  // Commented out to prevent forced redirects
+  /*
   useEffect(() => {
     // Check if profile was just submitted to prevent redirect loop
     const profileJustSubmitted = sessionStorage.getItem('profileJustSubmitted') === 'true';
@@ -50,6 +52,7 @@ function Home() {
       navigate('/profile-setup');
     }
   }, [isSignedIn, profileLoading, isProfileComplete, navigate]);
+  */
 
   const handleLogout = async () => {
     try {
@@ -305,113 +308,80 @@ const questions = [
         {/* Profile Completion Banner */}
         <ProfileCompletionBanner />
         
-        <section className="py-2 md:py-4 lg:py-6 xl:py-8">
-          <div className="container px-4 md:px-6">
-            <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px] items-center min-h-[calc(100vh-8rem)]">
-              <div className="flex flex-col justify-center space-y-6 animate-on-scroll">
-                <div className="w-full bg-white dark:bg-gray-900 pt-8 md:pt-12">
-      <div className="max-w-6xl mx-auto px-6 flex flex-col items-center gap-12">
-        
-        {/* Text + Buttons + Stars */}
-        <div className="flex flex-col items-start text-left max-w-[600px] gap-6">
-         <motion.h1
-  initial={{ opacity: 0, y: 30 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.7 }}
-  className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl leading-tight"
->
-  Report Local Issues. <br />
-  <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
-    Make Your City Better.
-  </span>
-</motion.h1>
+        {/* Hero Section - Redesigned for Authenticity */}
+        <section className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-white via-orange-50/30 to-amber-50/20 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+          {/* Organic Background Elements */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-20 right-10 w-72 h-72 bg-awaaj-primary/10 rounded-full blur-3xl animate-pulse-slow"></div>
+            <div className="absolute bottom-20 left-10 w-96 h-96 bg-awaaj-accent/10 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '1s'}}></div>
+            <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-awaaj-secondary/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '2s'}}></div>
+          </div>
 
-          <p className="text-muted-foreground md:text-xl leading-relaxed">
-            Awaaz helps citizens report and track local civic issues like potholes,
-            broken lights, and garbage collection problems. Join thousands making their
-            communities better.
-          </p>
-
-          {/* Buttons aligned with text */}
-          <nav aria-label="primary actions" className="flex flex-col sm:flex-row gap-4">
-            <button
-              className="flex h-12 items-center justify-center rounded-lg bg-emerald-500 px-6 py-3 text-sm font-medium text-white transition-all hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] group"
-              onClick={() => navigate('/signup')}
-            >
-              Get Started
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
+          <div className="container relative z-10 mx-auto px-4 md:px-6 py-12 md:py-20">
+            <div className="max-w-5xl mx-auto text-center">
+              
+              {/* Centered Content */}
+              <motion.div 
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="space-y-8"
               >
-                <path d="M5 12h14" />
-                <path d="m12 5 7 7-7 7" />
-              </svg>
-            </button>
-
-        <button
-          className="flex h-12 items-center justify-center rounded-lg border border-gray-300 dark:border-gray-600 px-6 py-3 text-sm font-medium transition-all hover:bg-gray-50 dark:hover:bg-gray-800 duration-300 group"
-          onClick={() => {
-            document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
-          }}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="mr-2 h-4 w-4"
-          >
-            <polygon points="5,3 19,12 5,21" />
-          </svg>
-          Watch Demo
-        </button>
-      </nav>
-
-      {/* ⭐ Rating just below buttons */}
-      <div className="flex items-center gap-1 mt-4">
-        <div className="flex">
-          {[...Array(5)].map((_, i) => (
-            <svg
-              key={i}
-              className="w-4 h-4 text-yellow-400 fill-current"
-              viewBox="0 0 20 20"
-            >
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-          ))}
-        </div>
-        <span className="text-sm text-muted-foreground ml-2">
-          4.8/5 from 2,500+ users
-        </span>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-              </div>
-              <div className="flex items-center justify-center animate-on-scroll">
-                <div className="relative w-full max-w-[400px] aspect-[4/3] overflow-hidden rounded-xl border shadow-2xl transition-all duration-500 hover:shadow-3xl hover:scale-[1.02] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
-                  <img src="pexels.jpg" alt="Awaaz App Interface showing issue reporting" className="shadow-lg object-cover w-full h-full transform transition-transform duration-500 hover:scale-105 hover:rotate-1" loading="lazy" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
-                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
-                    <span className="text-xs font-medium text-gray-700">✅ Live Demo</span>
+                {/* Main Heading - More Dynamic */}
+                <div className="space-y-6">
+                  <h1 className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-display font-black leading-[1.1]">
+                    <span className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300">
+                      Your Voice,
+                    </span>
+                    <br />
+                    <span className="inline-block bg-clip-text text-transparent bg-gradient-awaaj relative">
+                      Your City,
+                    </span>
+                    <br />
+                    <span className="inline-block text-awaaj-secondary dark:text-awaaj-accent">
+                      Your Power!
+                    </span>
+                  </h1>
+                  
+                  {/* Hand-drawn underline effect */}
+                  <div className="relative w-64 h-3 mx-auto">
+                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 250 12" fill="none">
+                      <path d="M2 6 Q125 10, 248 6" stroke="#FF6B35" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.5"/>
+                      <path d="M2 8 Q125 4, 248 8" stroke="#F7931E" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.3"/>
+                    </svg>
                   </div>
                 </div>
-              </div>
+
+                {/* Description - More Conversational */}
+                <p className="text-xl md:text-2xl lg:text-3xl text-gray-700 dark:text-gray-300 leading-relaxed font-medium max-w-3xl mx-auto">
+                  Report potholes, broken lights, or any civic issue
+                  <br />
+                  <span className="text-awaaj-primary font-bold">Track progress</span> in real-time
+                </p>
+
+                {/* CTA Buttons - More Playful */}
+                <div className="flex flex-wrap gap-4 justify-center">
+                  <button
+                    onClick={() => navigate('/signup')}
+                    className="group relative px-8 py-4 bg-gradient-awaaj text-white font-bold text-lg rounded-full shadow-awaaj hover:shadow-awaaj-lg transition-all duration-300 hover:scale-105 overflow-hidden"
+                  >
+                    <span className="relative z-10 flex items-center gap-2">
+                      Raise Your Voice Now
+                      <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </span>
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                  </button>
+
+                  <button
+                    onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="px-8 py-4 bg-white dark:bg-gray-800 text-awaaj-primary dark:text-awaaj-accent font-bold text-lg rounded-full border-3 border-awaaj-primary dark:border-awaaj-accent hover:bg-awaaj-primary hover:text-white dark:hover:bg-awaaj-accent dark:hover:text-gray-900 transition-all duration-300 hover:scale-105 shadow-lg"
+                  >
+                    See How It Works
+                  </button>
+                </div>
+              </motion.div>
             </div>
           </div>
         </section>
@@ -424,21 +394,22 @@ const questions = [
       
       <div className="relative container mx-auto px-6 lg:px-8">
         <div className="text-center mb-20">
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-100/80 dark:bg-emerald-900/50 backdrop-blur-sm border border-emerald-200/50 dark:border-emerald-700/50 mb-6">
-            <span className="text-emerald-700 dark:text-emerald-300 font-medium text-sm">Features</span>
+          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-awaaj text-white backdrop-blur-sm shadow-awaaj mb-6">
+            <img src={awaazLogo} alt="Awaaj" className="h-6 w-6" />
+            <span className="font-bold text-sm">Awaaj Features</span>
           </div>
           
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-            <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
-              Everything you need
+          <h2 className="text-5xl md:text-6xl lg:text-7xl font-display font-black mb-6 leading-tight">
+            <span className="text-gradient-awaaj">
+              Every Voice Matters
             </span>
             <br />
-            <span className="text-slate-800 dark:text-slate-200">to improve your community</span>
+            <span className="text-slate-800 dark:text-slate-200">Every Issue Counts</span>
           </h2>
           
-          <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
-            Awaaz provides a comprehensive platform for citizens and city workers to collaborate 
-            on local issues and build stronger communities together.
+          <p className="text-slate-600 dark:text-slate-400 text-xl md:text-2xl max-w-4xl mx-auto leading-relaxed font-medium">
+            <span className="font-bold text-awaaj-primary">Awaaj</span> brings the power of civic engagement to your fingertips.
+            Report, track, and resolve issues that matter to your community.
           </p>
         </div>
 
@@ -447,18 +418,18 @@ const questions = [
             <Link
               to={feature.link || "#"}
               key={index}
-              className="group relative bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-white/20 dark:border-slate-700/50 hover:shadow-xl dark:hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 block"
+              className="card-awaaj-hover group p-8 block"
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 dark:group-hover:opacity-10 rounded-2xl transition-opacity duration-500`}></div>
+              <div className={`absolute inset-0 bg-gradient-awaaj opacity-0 group-hover:opacity-5 dark:group-hover:opacity-10 rounded-2xl transition-opacity duration-500`}></div>
               
               <div className="relative mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-800/50 dark:to-teal-800/50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <div className="w-16 h-16 bg-gradient-awaaj rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-awaaj">
                   {feature.icon}
                 </div>
               </div>
 
               <div className="relative">
-                <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-4 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors duration-300">
+                <h3 className="text-2xl font-display font-bold text-slate-800 dark:text-slate-200 mb-4 group-hover:text-awaaj-primary dark:group-hover:text-awaaj-accent transition-colors duration-300">
                   {feature.title}
                 </h3>
                 
@@ -469,7 +440,7 @@ const questions = [
                 <ul className="space-y-3">
                   {feature.features.map((item, i) => (
                     <li key={i} className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
-                      <div className="w-5 h-5 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-5 h-5 bg-gradient-awaaj rounded-full flex items-center justify-center flex-shrink-0">
                         <svg 
                           xmlns="http://www.w3.org/2000/svg" 
                           width="12" 
@@ -488,7 +459,7 @@ const questions = [
                 </ul>
               </div>
 
-              <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-emerald-200/50 dark:group-hover:border-emerald-700/50 transition-colors duration-300"></div>
+              <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-awaaj-primary/30 dark:group-hover:border-awaaj-accent/30 transition-colors duration-300"></div>
             </Link>
           ))}
         </div>
@@ -503,21 +474,22 @@ const questions = [
 
       <div className="relative container mx-auto px-6 lg:px-8">
         <div className="text-center mb-20">
-          <div className="inline-flex items-center px-5 py-3 rounded-full bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/50 dark:to-teal-900/50 border border-emerald-200/60 dark:border-emerald-700/50 mb-8 shadow-sm">
-            <span className="text-emerald-800 dark:text-emerald-200 font-bold text-sm uppercase tracking-wider">How It Works</span>
+          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-awaaj text-white shadow-awaaj mb-8">
+            <img src={awaazLogo} alt="Awaaj" className="h-6 w-6" />
+            <span className="font-bold text-sm uppercase tracking-wider">How Awaaj Works</span>
           </div>
           
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-            <span className="text-slate-800 dark:text-slate-200">Simple process,</span>
+          <h2 className="text-5xl md:text-6xl lg:text-7xl font-display font-black mb-6 leading-tight">
+            <span className="text-slate-800 dark:text-slate-200">Simple Process,</span>
             <br />
-            <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
-              powerful results
+            <span className="text-gradient-awaaj">
+              Powerful Impact
             </span>
           </h2>
           
-          <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl max-w-4xl mx-auto leading-relaxed">
-            Awaaz makes it easy to report issues and track their resolution in just a few simple steps. 
-            Join thousands of citizens making their communities better.
+          <p className="text-slate-600 dark:text-slate-400 text-xl md:text-2xl max-w-4xl mx-auto leading-relaxed font-medium">
+            <span className="font-bold text-awaaj-primary">Awaaj</span> makes it easy to report issues and track resolution.
+            Your voice creates change in just three simple steps.
           </p>
         </div>
 
@@ -528,17 +500,17 @@ const questions = [
             <div className="grid lg:grid-cols-3 gap-8">
               {steps.map((step, index) => (
                 <div key={index} className="relative">
-                  <div className="group bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-white/50 dark:border-slate-700/50 hover:shadow-xl transition-all duration-500 hover:-translate-y-2">
+                  <div className="card-awaaj-hover group p-8">
                     <div className="relative mb-6 flex justify-center">
-                      <div className={`w-20 h-20 bg-gradient-to-br ${step.gradient} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                        <span className="text-white font-bold text-lg">{step.step}</span>
+                      <div className={`w-20 h-20 bg-gradient-awaaj rounded-2xl flex items-center justify-center shadow-awaaj group-hover:scale-110 group-hover:rotate-12 transition-all duration-300`}>
+                        <span className="text-white font-display font-bold text-2xl">{step.step}</span>
                       </div>
                       
                 
                     </div>
 
                     <div className="text-center">
-                      <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-4 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors duration-300">
+                      <h3 className="text-2xl font-display font-bold text-slate-800 dark:text-slate-200 mb-4 group-hover:text-awaaj-primary dark:group-hover:text-awaaj-accent transition-colors duration-300">
                         {step.title}
                       </h3>
                       

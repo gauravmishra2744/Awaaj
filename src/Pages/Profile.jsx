@@ -40,6 +40,7 @@ const Profile = () => {
 
   useEffect(() => {
     if (profileData) {
+      console.log('Profile data loaded:', profileData);
       const data = {
         username: profileData.name || '',
         email: profileData.email || '',
@@ -48,8 +49,15 @@ const Profile = () => {
       };
       setFormData(data);
       setOriginalData(data);
+    } else {
+      console.log('No profile data available, isLoading:', isLoading);
+      const token = localStorage.getItem('token');
+      console.log('Token exists in localStorage:', !!token);
+      if (token) {
+        console.log('Token preview:', token.substring(0, 20) + '...');
+      }
     }
-  }, [profileData]);
+  }, [profileData, isLoading]);
 
   const validate = () => {
     const tempErrors = {};
@@ -86,21 +94,29 @@ const Profile = () => {
   };
 
   const handleSave = async () => {
+    // Clear any previous errors
+    setShowError(false);
+    setErrorMessage('');
+
     if (!validate()) {
       return;
     }
 
     const token = localStorage.getItem('token');
     if (!token) {
-      setErrorMessage('You must be logged in to update your profile');
+      setErrorMessage('Session expired. Please login again.');
       setShowError(true);
-      setTimeout(() => setShowError(false), 4000);
+      setTimeout(() => {
+        setShowError(false);
+        navigate('/login');
+      }, 2000);
       return;
     }
 
     setIsSaving(true);
     
     try {
+      console.log('Sending update request with token:', token ? 'Token exists' : 'No token');
       const response = await fetch('http://localhost:5000/api/profile/me', {
         method: 'PUT',
         headers: {
@@ -116,9 +132,16 @@ const Profile = () => {
       });
 
       const data = await response.json();
+      console.log('Update response:', response.status, data);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update profile');
+        if (response.status === 401) {
+          // Token is invalid
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          throw new Error('Session expired. Please login again.');
+        }
+        throw new Error(data.error || data.message || 'Failed to update profile');
       }
 
       setOriginalData(formData);
@@ -135,6 +158,11 @@ const Profile = () => {
       setErrorMessage(error.message || 'Failed to update profile. Please try again.');
       setShowError(true);
       setTimeout(() => setShowError(false), 4000);
+      
+      // If it's an auth error, redirect to login
+      if (error.message.includes('Session expired') || error.message.includes('login')) {
+        setTimeout(() => navigate('/login'), 2000);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -197,6 +225,34 @@ const Profile = () => {
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400 font-medium">Loading your profile...</p>
+          </div>
+        ) : !profileData ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <AlertTriangle className="w-16 h-16 text-red-500 mb-4" />
+            <p className="text-gray-900 dark:text-white font-bold text-xl mb-2">Unable to load profile</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              {localStorage.getItem('token') 
+                ? 'There was an error loading your profile data. Please check if the backend server is running on port 5000.'
+                : 'Please try logging in again'
+              }
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => refetch()}
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all duration-300"
+              >
+                Retry
+              </button>
+              <button
+                onClick={() => navigate('/login')}
+                className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-bold transition-all duration-300"
+              >
+                Go to Login
+              </button>
+            </div>
+            <div className="mt-4 text-xs text-gray-500">
+              <p>Open browser console (F12) for more details</p>
+            </div>
           </div>
         ) : (
           <div className="grid lg:grid-cols-3 gap-8">

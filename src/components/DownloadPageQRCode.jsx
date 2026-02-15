@@ -1,5 +1,5 @@
 import React from 'react';
-import favvIcon from '../favv.svg';
+import awaazLogo from '../assets/awaaz-logo.svg';
 import './EnhancedQRCode.css';
 
 const DownloadPageQRCode = ({ 
@@ -53,7 +53,7 @@ const DownloadPageQRCode = ({
                 <div className="app-icon-container rounded-2xl p-4 shadow-xl backdrop-blur-sm">
                   <div className={`app-icon-bg ${iconSizes[size]} flex items-center justify-center rounded-xl shadow-lg`}>
                     <img 
-                      src={favvIcon} 
+                      src={awaazLogo} 
                       alt="Awaaz App Icon" 
                       className={`${iconInnerSizes[size]} object-contain filter brightness-110`}
                     />

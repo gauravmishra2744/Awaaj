@@ -5,25 +5,48 @@ const { uploadOnCloudinary } = require('../utils/cloudinary.js');
 
 // Get current user profile
 const getUserProfile = asyncHandler(async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-  
-  const user = await User.findById(req.user._id);
-  
-  if (!user) {
-    return res.status(404).json({ error: 'User not found' });
-  }
+  try {
+    if (!req.user) {
+      console.log('getUserProfile: No req.user found');
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    console.log('getUserProfile: Fetching user with ID:', req.user._id);
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      console.log('getUserProfile: User not found in database');
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-  res.json({
-    id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    location: user.location,
-    profilePictureUrl: user.profilePictureUrl || null,
-    isProfileComplete: user.isProfileComplete()
-  });
+    console.log('getUserProfile: User found:', user.email);
+    
+    // Calculate profile completeness
+    let isComplete = false;
+    try {
+      isComplete = user.isProfileComplete ? user.isProfileComplete() : (user.name && user.email && user.location);
+    } catch (e) {
+      console.warn('Error calling isProfileComplete:', e);
+      isComplete = !!(user.name && user.email && user.location);
+    }
+
+    const response = {
+      id: user._id,
+      name: user.name || '',
+      email: user.email || '',
+      role: user.role || 'user',
+      location: user.location || '',
+      phone: user.phone || '',
+      profilePictureUrl: user.profilePictureUrl || null,
+      isProfileComplete: isComplete
+    };
+
+    console.log('getUserProfile: Sending response:', response);
+    res.json(response);
+  } catch (error) {
+    console.error('getUserProfile: Error occurred:', error);
+    res.status(500).json({ error: 'Server error while fetching profile', details: error.message });
+  }
 });
 
 // Update user profile

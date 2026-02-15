@@ -1,5 +1,5 @@
 import React from 'react';
-import favvIcon from '../favv.svg';
+import awaazLogo from '../assets/awaaz-logo.svg';
 import './EnhancedQRCode.css';
 
 const EnhancedQRCode = () => {
@@ -24,7 +24,7 @@ const EnhancedQRCode = () => {
               <div className="app-icon-container rounded-2xl p-2 shadow-xl backdrop-blur-sm">
                 <div className="app-icon-bg w-12 h-12 flex items-center justify-center rounded-xl shadow-lg">
                   <img 
-                    src={favvIcon} 
+                    src={awaazLogo} 
                     alt="Awaaz App Icon" 
                     className="w-8 h-8 object-contain filter brightness-110"
                   />
@@ -54,7 +54,7 @@ const EnhancedQRCode = () => {
       <div className="floating-icon-glow absolute -bottom-6 -left-6 h-20 w-20 rounded-2xl border-4 border-white dark:border-gray-800 bg-gradient-to-br from-white via-slate-50 to-gray-100 dark:from-[#1f2937] dark:via-[#111827] dark:to-[#0f172a] p-3 shadow-2xl transition-all duration-300 hover:scale-110 hover:rotate-6 group">
         <div className="flex items-center justify-center h-full w-full rounded-xl bg-gradient-to-br from-emerald-100 via-green-100 to-emerald-200 dark:from-emerald-900 dark:via-green-900 dark:to-emerald-800 group-hover:from-emerald-200 group-hover:via-green-200 group-hover:to-emerald-300 dark:group-hover:from-emerald-800 dark:group-hover:via-green-800 dark:group-hover:to-emerald-700 transition-all duration-300">
           <img 
-            src={favvIcon} 
+            src={awaazLogo} 
             alt="Awaaz Icon" 
             className="w-10 h-10 object-contain filter brightness-110 group-hover:scale-110 transition-transform duration-300" 
           />
