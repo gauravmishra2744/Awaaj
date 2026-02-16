@@ -6,6 +6,12 @@ import { toast, ToastContainer } from "react-toastify";
 import EnhancedQRCode from "./components/EnhancedQRCode";
 import ProfileCompletionBanner from "./components/ProfileCompletionBanner";
 import useProfileStatus from "./hooks/useProfileStatus";
+import {
+  FileText, List, User, Headphones, BarChart3, BookOpen,
+  MessageCircle, MapPin, Search, Calendar, Bus, ChartColumn,
+  Vote, Building2, Car, Zap, HandCoins, ReceiptIndianRupee,
+  TrainFront, School,
+} from "lucide-react";
 
 function Home() {
   const [activeFaq, setActiveFaq] = useState(null);
@@ -92,6 +98,29 @@ function Home() {
       bullets: ["Upvote issues", "Trending problems", "Neighbourhood stats"],
       link: "/community-voting",
     },
+  ];
+
+  const services = [
+    { title: "File a Complaint", desc: "Submit a new issue with full details.", link: "/report-issue", icon: FileText },
+    { title: "My Complaints", desc: "Track all complaints you've raised.", link: "/complaints", icon: List },
+    { title: "Profile", desc: "View or edit your profile details.", link: "/profile", icon: User },
+    { title: "Support", desc: "Need help? Contact our support.", link: "/contact", icon: Headphones },
+    { title: "Community Voting", desc: "Cast your vote on trending topics and decisions.", link: "/community-voting", icon: BarChart3 },
+    { title: "Resources", desc: "Read FAQs, citizen rights, and more.", link: "/resources", icon: BookOpen },
+    { title: "Chat Room", desc: "Join real-time community discussions.", link: "/chatroom", icon: MessageCircle },
+    { title: "Nearby Services", desc: "Find hospitals, police stations, and fire stations.", link: "/nearby-services", icon: MapPin },
+    { title: "Lost & Found", desc: "Bringing lost items back to their owners.", link: "/lost-found", icon: Search },
+    { title: "Community Holidays", desc: "Upcoming community holidays near you.", link: "/community-holidays", icon: Calendar },
+    { title: "Public Transport", desc: "Real-time transit information.", link: "/transport", icon: Bus },
+    { title: "Civic Statistics", desc: "Population & Water Resources Analytics.", link: "/civic-stats", icon: ChartColumn },
+    { title: "Election & Governance", desc: "Electoral Information & Voter Analytics.", link: "/elections-info", icon: Vote },
+    { title: "Government Schemes", desc: "Government Schemes & Financial Analytics.", link: "/govt-schemes", icon: Building2 },
+    { title: "Traffic Fines & Vehicle Info", desc: "Essential vehicle and transport services.", link: "/vehical", icon: Car },
+    { title: "Water & Electricity", desc: "Supply schedules & outage notifications.", link: "/electricity", icon: Zap },
+    { title: "SDRF & NFSA", desc: "Disaster Response Fund & Food Security data.", link: "/sdrf", icon: HandCoins },
+    { title: "Budget Estimates", desc: "Evaluate Budget Estimates & analytics.", link: "/budget", icon: ReceiptIndianRupee },
+    { title: "Train Schedule", desc: "Real-Time Train Schedule information.", link: "/train", icon: TrainFront },
+    { title: "School Statistics", desc: "Nationwide school data & analysis.", link: "/school", icon: School },
   ];
 
   const steps = [
@@ -254,8 +283,48 @@ function Home() {
           </div>
         </section>
 
+        {/* ── Services ─────────────────────────────────────────── */}
+        <section className="py-20 bg-white dark:bg-gray-950">
+          <div className="mx-auto max-w-6xl px-5">
+            <div className="text-center mb-14 fade-in-on-scroll">
+              <h2 className="text-3xl md:text-4xl font-bold">
+                Explore all{" "}
+                <span className="text-orange-600 dark:text-orange-400">
+                  Services
+                </span>
+              </h2>
+              <p className="mt-3 text-gray-600 dark:text-gray-400 text-lg max-w-xl mx-auto">
+                Everything you need — from filing complaints to checking train schedules.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 fade-in-on-scroll">
+              {services.map((s, i) => {
+                const Icon = s.icon;
+                return (
+                  <Link
+                    key={i}
+                    to={s.link}
+                    className="group flex flex-col items-center text-center rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-5 hover:border-orange-300 dark:hover:border-orange-700 transition-colors"
+                  >
+                    <div className="flex items-center justify-center w-11 h-11 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 mb-3 group-hover:bg-orange-200 dark:group-hover:bg-orange-800/40 transition-colors">
+                      <Icon size={22} />
+                    </div>
+                    <h3 className="text-sm font-semibold mb-1 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                      {s.title}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                      {s.desc}
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
         {/* ── How it works ─────────────────────────────────────── */}
-        <section id="how-it-works" className="py-20 bg-white dark:bg-gray-950">
+        <section id="how-it-works" className="py-20 bg-gray-50 dark:bg-gray-900/60">
           <div className="mx-auto max-w-4xl px-5">
             <div className="text-center mb-14 fade-in-on-scroll">
               <h2 className="text-3xl md:text-4xl font-bold">
