@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import API_BASE from '../utils/api';
 
 function DebugProfile() {
   const [result, setResult] = useState('');
@@ -19,7 +20,7 @@ function DebugProfile() {
     setResult(`Token found: ${token.substring(0, 20)}...\n\nCalling API...`);
 
     try {
-      const response = await fetch('http://localhost:5000/api/profile/me', {
+      const response = await fetch(`${API_BASE}/profile/me`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import useProfileStatus from '../hooks/useProfileStatus';
+import API_BASE from '../utils/api';
 import 'react-toastify/dist/ReactToastify.css';
 
 const ProfileSetup = ({onComplete}) => {
@@ -78,7 +79,7 @@ const ProfileSetup = ({onComplete}) => {
         try {
           const fd = new FormData();
           fd.append('image', profileImageFile);
-          const uploadRes = await fetch(`http://localhost:5000/api/profile/me/profile-picture`, {
+          const uploadRes = await fetch(`${API_BASE}/profile/me/profile-picture`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`
@@ -112,7 +113,7 @@ const ProfileSetup = ({onComplete}) => {
       console.log(localStorage.getItem("profileComplete"));
       if (onComplete) onComplete();
       
-      const profileResponse = await fetch('http://localhost:5000/api/profile/me', {
+      const profileResponse = await fetch(`${API_BASE}/profile/me`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -25,6 +25,7 @@ import {
 import { motion } from "framer-motion";
 import Switch from '../DarkModeToggle';
 import csrfManager from "../utils/csrfManager";
+import API_BASE from "../utils/api";
 import { toast } from 'react-hot-toast';
 
 const AdminDashboard = () => {
@@ -94,7 +95,7 @@ const AdminDashboard = () => {
   const fetchIssues = React.useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const response = await csrfManager.secureFetch("http://localhost:5000/api/issues");
+      const response = await csrfManager.secureFetch(`${API_BASE}/issues`);
       if (response.ok) {
         const data = await response.json();
         setIssues(data);
@@ -127,7 +128,7 @@ const AdminDashboard = () => {
 
   const handleStatusChange = async (issueId, newStatus) => {
     try {
-      const response = await csrfManager.secureFetch(`http://localhost:5000/api/issues/${issueId}/status`, {
+      const response = await csrfManager.secureFetch(`${API_BASE}/issues/${issueId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

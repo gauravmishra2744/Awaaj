@@ -20,7 +20,8 @@ const useProfileStatus = () => {
 
     try {
       console.log('Fetching profile data with token...');
-      const response = await fetch(`http://localhost:5000/api/profile/me`, {
+      const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+      const response = await fetch(`${API_BASE}/profile/me`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -4,6 +4,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { FaUser, FaEnvelope, FaLock, FaExclamationCircle } from "react-icons/fa";
 import { motion } from "framer-motion";
 import 'react-toastify/dist/ReactToastify.css';
+import API_BASE from "../utils/api";
 
 const Signup = () => {
     const navigate = useNavigate();
@@ -33,7 +34,7 @@ const Signup = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:5000/api/auth/signup', {
+            const response = await fetch(`${API_BASE}/auth/signup`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

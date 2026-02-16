@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import csrfManager from "../utils/csrfManager";
+import API_BASE from "../utils/api";
 import { toast } from 'react-hot-toast';
 
 const FormInput = ({ type = "text", id, label, placeholder, value, onChange, required = false, rows, icon: Icon, disabled = false, error }) => {
@@ -173,7 +174,7 @@ export default function ReportIssue() {
       formData.append('image', imageFile);
 
       // Call AI analysis endpoint
-      const response = await fetch('http://localhost:5000/api/issues/analyze-image', {
+      const response = await fetch(`${API_BASE}/issues/analyze-image`, {
         method: 'POST',
         body: formData,
       });
@@ -301,7 +302,7 @@ http://localhost:3000/issues/${issueData._id || issueData.id}
       });
 
       // Try direct fetch first (bypass CSRF for testing)
-      const response = await fetch("http://localhost:5000/api/issues", {
+      const response = await fetch(`${API_BASE}/issues`, {
         method: "POST",
         body: data,
       });

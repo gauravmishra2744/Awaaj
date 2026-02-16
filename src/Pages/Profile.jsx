@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useProfileStatus from '../hooks/useProfileStatus';
+import API_BASE from '../utils/api';
 import Navbar from '../components/Navbar';
 
 
@@ -117,7 +118,7 @@ const Profile = () => {
     
     try {
       console.log('Sending update request with token:', token ? 'Token exists' : 'No token');
-      const response = await fetch('http://localhost:5000/api/profile/me', {
+      const response = await fetch(`${API_BASE}/profile/me`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
