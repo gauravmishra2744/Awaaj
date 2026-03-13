@@ -4,7 +4,7 @@ const axios = require("axios");
 const { asyncHandler } = require("../utils/asyncHandler");
 
 const CONTRIBUTORS_FILE = path.join(__dirname, "../cache/contributors.json");
-const GITHUB_API_URL = "https://api.github.com/repos/HarshS16/Awaaz/contributors";
+const GITHUB_API_URL = "https://api.github.com/repos/gauravmishra2744/Awaaz/contributors";
 
 const getContributors = asyncHandler(async (req, res) => {
     let useCached = false;
