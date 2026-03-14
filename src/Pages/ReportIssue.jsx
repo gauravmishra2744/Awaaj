@@ -109,6 +109,48 @@ export default function ReportIssue() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [issueReceipt, setIssueReceipt] = useState(null);
 
+  useEffect(() => {
+    const hydrateFromUserProfile = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/profile/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const profile = await response.json();
+        setFormData((prev) => ({
+          ...prev,
+          email: prev.email || profile.email || "",
+          phone: prev.phone || profile.phone || "",
+          location: prev.location || profile.location || "",
+        }));
+      } catch {
+        const storedUser = localStorage.getItem("user");
+        if (!storedUser) return;
+
+        try {
+          const parsed = JSON.parse(storedUser);
+          setFormData((prev) => ({
+            ...prev,
+            email: prev.email || parsed.email || "",
+          }));
+        } catch {
+          // Ignore malformed localStorage values.
+        }
+      }
+    };
+
+    hydrateFromUserProfile();
+  }, []);
+
   const validateForm = useCallback(() => {
     let newErrors = {};
     if (!/^\+?[0-9]{7,15}$/.test(formData.phone)) {
@@ -225,7 +267,7 @@ DATE: ${new Date().toLocaleString()}
 
 Title: ${issueData.title}
 Category: ${issueData.category || 'Other'}
-Priority: ${issueData.priorityLevel || 'Normal'}
+Priority: ${issueData.priority || issueData.priorityLevel || 'Normal'}
 Location: ${issueData.location?.address || formData.location}
 
 ═══════════════════════════════════════
@@ -302,8 +344,14 @@ http://localhost:3000/issues/${issueData._id || issueData.id}
       });
 
       // Try direct fetch first (bypass CSRF for testing)
+      const token = localStorage.getItem("token");
       const response = await fetch(`${API_BASE}/issues`, {
         method: "POST",
+        headers: token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : undefined,
         body: data,
       });
 
@@ -317,7 +365,7 @@ http://localhost:3000/issues/${issueData._id || issueData.id}
         
         // Show success message with AI analysis
         const category = result.aiAnalysis?.category || result.issue?.category || 'Other';
-        const priority = result.aiAnalysis?.priorityLevel || result.issue?.priorityLevel || 'Normal';
+        const priority = result.aiAnalysis?.priorityLevel || result.issue?.priority || result.issue?.priorityLevel || 'Normal';
         
         toast.success(
           `Issue submitted successfully!\nCategory: ${category}\nPriority: ${priority}`,
@@ -531,9 +579,9 @@ http://localhost:3000/issues/${issueData._id || issueData.id}
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Priority:</span>
                   <span className={`font-medium ${
-                    issueReceipt.priorityLevel === 'High' ? 'text-red-600' : 
-                    issueReceipt.priorityLevel === 'Medium' ? 'text-yellow-600' : 'text-green-600'
-                  }`}>{issueReceipt.priorityLevel || 'Normal'}</span>
+                    (issueReceipt.priority || issueReceipt.priorityLevel) === 'High' ? 'text-red-600' : 
+                    (issueReceipt.priority || issueReceipt.priorityLevel) === 'Medium' ? 'text-yellow-600' : 'text-green-600'
+                  }`}>{issueReceipt.priority || issueReceipt.priorityLevel || 'Normal'}</span>
                 </div>
                 {issueReceipt.slaDeadline && (
                   <div className="flex justify-between text-sm">

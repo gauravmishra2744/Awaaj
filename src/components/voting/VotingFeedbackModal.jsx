@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageSquare, 
@@ -8,6 +8,7 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
+import API_BASE from '../../utils/api';
 
 const VotingFeedbackModal = ({ 
   isOpen, 
@@ -26,6 +27,48 @@ const VotingFeedbackModal = ({
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [touched, setTouched] = useState({});
+
+  useEffect(() => {
+    const hydrateFromProfile = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/profile/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) return;
+
+        const profile = await response.json();
+        setFormData((prev) => ({
+          ...prev,
+          name: prev.name || profile.name || '',
+          email: prev.email || profile.email || '',
+          phone: prev.phone || profile.phone || '',
+        }));
+      } catch {
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) return;
+        try {
+          const parsed = JSON.parse(storedUser);
+          setFormData((prev) => ({
+            ...prev,
+            name: prev.name || parsed.name || '',
+            email: prev.email || parsed.email || '',
+          }));
+        } catch {
+          // Ignore malformed local storage values.
+        }
+      }
+    };
+
+    if (isOpen) {
+      hydrateFromProfile();
+    }
+  }, [isOpen]);
 
   // Different emojis for rating
   const emojis = ["😡", "😞", "😐", "🙂", "🤩"];

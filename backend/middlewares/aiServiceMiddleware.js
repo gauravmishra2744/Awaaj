@@ -7,6 +7,38 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY";
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 const GEMINI_EMBEDDING_URL = "https://generativelanguage.googleapis.com/v1beta/models/embedding-001:embedContent";
 
+const CATEGORY_MAP = {
+  roads: "Roads & Infrastructure",
+  road: "Roads & Infrastructure",
+  "roads & infrastructure": "Roads & Infrastructure",
+  water: "Water & Sanitation",
+  "water & sanitation": "Water & Sanitation",
+  electricity: "Electricity & Power",
+  power: "Electricity & Power",
+  "electricity & power": "Electricity & Power",
+  waste: "Waste Management",
+  "waste management": "Waste Management",
+  "public amenities": "Public Amenities",
+  amenities: "Public Amenities",
+  environment: "Environment",
+  others: "Others",
+  other: "Others",
+};
+
+const normalizeCategory = (rawCategory) => {
+  if (!rawCategory || typeof rawCategory !== "string") {
+    return "Others";
+  }
+
+  const cleaned = rawCategory
+    .replace(/[\n\r\t*`]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+  return CATEGORY_MAP[cleaned] || "Others";
+};
+
 // Check if API key is configured
 const isGeminiConfigured = () => {
   return GEMINI_API_KEY && 
@@ -51,14 +83,14 @@ const classifyIssue = async (req, res, next) => {
     }
 
     const text = `${req.body.title}. ${req.body.description}`;
-    const prompt = `Classify the following civic issue into one of these categories: Roads, Water, Electricity, Waste, Public Amenities, Environment, Others. 
+    const prompt = `Classify the following civic issue into one of these categories: Roads & Infrastructure, Water & Sanitation, Electricity & Power, Waste Management, Public Amenities, Environment, Others.
     Return ONLY the category name.
     Issue: ${text}`;
 
     const category = await callGemini(prompt);
 
     req.aiClassification = {
-      category: category ? category.trim() : "Others",
+      category: normalizeCategory(category),
       confidence: 0.9, // Mock confidence
       allCategories: [],
     };

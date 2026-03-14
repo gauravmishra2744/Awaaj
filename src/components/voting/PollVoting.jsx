@@ -16,6 +16,7 @@ import {
   Mail
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import API_BASE from '../../utils/api';
 
 const PollVoting = ({ poll, onClose, onVoteSubmitted }) => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -28,6 +29,45 @@ const PollVoting = ({ poll, onClose, onVoteSubmitted }) => {
   const [isVerified, setIsVerified] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
+
+  useEffect(() => {
+    const hydrateFromProfile = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/profile/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) return;
+
+        const profile = await response.json();
+        setVoterData((prev) => ({
+          ...prev,
+          email: prev.email || profile.email || '',
+          name: prev.name || profile.name || '',
+        }));
+      } catch {
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) return;
+        try {
+          const parsed = JSON.parse(storedUser);
+          setVoterData((prev) => ({
+            ...prev,
+            email: prev.email || parsed.email || '',
+            name: prev.name || parsed.name || '',
+          }));
+        } catch {
+          // Ignore malformed local storage values.
+        }
+      }
+    };
+
+    hydrateFromProfile();
+  }, []);
 
   useEffect(() => {
     // Calculate time remaining

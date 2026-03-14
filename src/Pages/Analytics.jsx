@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import { Users, FileText, MessageCircle, TrendingUp, Calendar, MapPin, Award, AlertCircle, Home, BarChart3, Bell, Settings, ChevronRight, ChevronLeft, Search } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
+import API_BASE from "../utils/api";
 
 
 const Analytics = () => {
@@ -9,6 +10,9 @@ const Analytics = () => {
   const [timeRange, setTimeRange] = useState('7d');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeRoute, setActiveRoute] = useState('/admin/analytics');
+  const [overview, setOverview] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const sidebarMenu = [
     { key: 'dashboard', label: 'Dashboard', icon: Home, route: '/admin/dashboard' },
@@ -19,31 +23,80 @@ const Analytics = () => {
     { key: 'settings', label: 'Settings', icon: Settings, route: '/admin/settings' },
   ];
 
-  const userGrowthData = [
-    { month: 'Jan', users: 1200, active: 850 },
-    { month: 'Feb', users: 1450, active: 980 },
-    { month: 'Mar', users: 1800, active: 1200 },
-    { month: 'Apr', users: 2100, active: 1450 },
-    { month: 'May', users: 2650, active: 1800 },
-    { month: 'Jun', users: 3200, active: 2200 },
-  ];
+  const palette = ['#059669', '#10b981', '#34d399', '#6ee7b7', '#047857', '#065f46'];
 
-  const engagementData = [
-    { day: 'Mon', posts: 45, comments: 120, votes: 89 },
-    { day: 'Tue', posts: 52, comments: 145, votes: 95 },
-    { day: 'Wed', posts: 38, comments: 98, votes: 78 },
-    { day: 'Thu', posts: 61, comments: 165, votes: 112 },
-    { day: 'Fri', posts: 48, comments: 132, votes: 87 },
-    { day: 'Sat', posts: 35, comments: 89, votes: 65 },
-    { day: 'Sun', posts: 29, comments: 76, votes: 54 },
-  ];
+  useEffect(() => {
+    const fetchOverview = async () => {
+      setIsLoading(true);
+      setError('');
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE}/analytics/overview`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-  const categoryData = [
-    { name: 'Local Issues', value: 35, color: '#059669' },
-    { name: 'Elections', value: 28, color: '#10b981' },
-    { name: 'Policy Discussion', value: 22, color: '#34d399' },
-    { name: 'Community Events', value: 15, color: '#6ee7b7' },
-  ];
+        const payload = await res.json();
+        if (!res.ok) {
+          throw new Error(payload.error || payload.message || 'Failed to fetch analytics');
+        }
+
+        setOverview(payload.data || {});
+      } catch (e) {
+        setError(e.message || 'Failed to fetch analytics');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOverview();
+  }, []);
+
+  const userGrowthData = useMemo(() => {
+    const trendRows = overview?.trends || [];
+    const byDate = new Map();
+
+    trendRows.forEach((row) => {
+      const date = row?._id?.date;
+      if (!date) return;
+      byDate.set(date, (byDate.get(date) || 0) + (row.count || 0));
+    });
+
+    return Array.from(byDate.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .slice(-10)
+      .map(([date, count]) => ({
+        month: date.slice(5),
+        users: count,
+        active: Math.max(1, Math.round(count * 0.7)),
+      }));
+  }, [overview]);
+
+  const statusCounts = useMemo(() => {
+    const map = {};
+    (overview?.byStatus || []).forEach((row) => {
+      map[row._id] = row.count;
+    });
+    return map;
+  }, [overview]);
+
+  const engagementData = useMemo(() => {
+    return [
+      { day: 'Pending', posts: statusCounts['Pending'] || 0, comments: 0, votes: 0 },
+      { day: 'In Progress', posts: statusCounts['In Progress'] || 0, comments: 0, votes: 0 },
+      { day: 'Resolved', posts: statusCounts['Resolved'] || 0, comments: 0, votes: 0 },
+      { day: 'Rejected', posts: statusCounts['Rejected'] || 0, comments: 0, votes: 0 },
+    ];
+  }, [statusCounts]);
+
+  const categoryData = useMemo(() => {
+    return (overview?.byCategory || []).slice(0, 6).map((item, index) => ({
+      name: item._id || 'Others',
+      value: item.count || 0,
+      color: palette[index % palette.length],
+    }));
+  }, [overview]);
 
   const recentActivity = [
     { type: 'new_post', user: 'Sarah Chen', action: 'created a post about local transportation', time: '2 minutes ago' },
@@ -169,11 +222,17 @@ const Analytics = () => {
 
       <div className="px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          <StatCard title="Total Users" value="3,247" change="+12.5%" trend="up" icon={Users} />
-          <StatCard title="Active Posts" value="1,582" change="+8.2%" trend="up" icon={FileText} />
-          <StatCard title="Comments" value="4,891" change="+15.7%" trend="up" icon={MessageCircle} />
-          <StatCard title="Civic Actions" value="892" change="+22.1%" trend="up" icon={Award} />
+          <StatCard title="Total Issues" value={overview?.totalIssues ?? 0} change={isLoading ? 'Loading' : 'Live'} trend="up" icon={Users} />
+          <StatCard title="Pending" value={statusCounts['Pending'] ?? 0} change={isLoading ? 'Loading' : 'Live'} trend="up" icon={FileText} />
+          <StatCard title="In Progress" value={statusCounts['In Progress'] ?? 0} change={isLoading ? 'Loading' : 'Live'} trend="up" icon={MessageCircle} />
+          <StatCard title="Resolved" value={statusCounts['Resolved'] ?? 0} change={isLoading ? 'Loading' : 'Live'} trend="up" icon={Award} />
         </div>
+
+        {error && (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+            {error}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
           <div className="lg:col-span-2 rounded-2xl bg-white/80 backdrop-blur-sm border border-green-100/50 shadow-xl shadow-green-100/20 p-6">

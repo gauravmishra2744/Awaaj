@@ -115,7 +115,7 @@ const issueSchema = new mongoose.Schema({
   // ============================================
   status: {
     type: String,
-    enum: ['Pending', 'In Progress', 'Resolved', 'Closed', 'On Hold'],
+    enum: ['Pending', 'In Progress', 'Resolved', 'Closed', 'On Hold', 'Rejected'],
     default: 'Pending',
   },
   statusHistory: [{

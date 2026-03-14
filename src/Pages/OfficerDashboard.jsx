@@ -84,6 +84,19 @@ const OfficerDashboard = () => {
     "Rejected": { color: "bg-red-100 text-red-800", icon: XCircle }
   };
 
+  const formatLocation = (location) => {
+    if (!location) return "Unknown location";
+    if (typeof location === "string") return location;
+    if (location.address) return location.address;
+    if (Array.isArray(location.coordinates) && location.coordinates.length === 2) {
+      const [lng, lat] = location.coordinates;
+      if (typeof lat === "number" && typeof lng === "number") {
+        return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      }
+    }
+    return "Unknown location";
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Toaster />
@@ -197,7 +210,7 @@ const OfficerDashboard = () => {
 
                 <div className="flex items-center text-sm text-gray-500 mb-6">
                   <MapPin className="w-4 h-4 mr-1" />
-                  {issue.location}
+                  {formatLocation(issue.location)}
                   <span className="mx-2">•</span>
                   <Clock className="w-4 h-4 mr-1" />
                   {issue.dateReported}

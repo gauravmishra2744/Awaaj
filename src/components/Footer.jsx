@@ -30,6 +30,17 @@ const Footer = () => {
       ],
     },
     {
+      heading: "Quick Links",
+      links: [
+        { label: "About", to: "/about" },
+        { label: "Contact", to: "/contact" },
+        { label: "Contributors", to: "/contributors" },
+        { label: "Voting", to: "/voting-system" },
+        { label: "Issue Map", to: "/user-map" },
+        { label: "Feedback", to: "/feedback" },
+      ],
+    },
+    {
       heading: "Legal",
       links: [
         { label: "Privacy", to: "/privacy" },
