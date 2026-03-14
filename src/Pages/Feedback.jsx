@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Send, MessageSquare, Loader2, Star, Sparkles, AlertCircle, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import API_BASE from "../utils/api";
 
 const Feedback = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +16,46 @@ const Feedback = () => {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState({});
+
+  useEffect(() => {
+    const hydrateFromProfile = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/profile/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) return;
+
+        const profile = await response.json();
+        setFormData((prev) => ({
+          ...prev,
+          name: prev.name || profile.name || "",
+          email: prev.email || profile.email || "",
+          phone: prev.phone || profile.phone || "",
+        }));
+      } catch {
+        const storedUser = localStorage.getItem("user");
+        if (!storedUser) return;
+        try {
+          const parsed = JSON.parse(storedUser);
+          setFormData((prev) => ({
+            ...prev,
+            name: prev.name || parsed.name || "",
+            email: prev.email || parsed.email || "",
+          }));
+        } catch {
+          // Ignore malformed local storage values.
+        }
+      }
+    };
+
+    hydrateFromProfile();
+  }, []);
 
   const { category, rating, feedback, name, email, phone } = formData;
 

@@ -6,15 +6,19 @@ import { toast, ToastContainer } from "react-toastify";
 import EnhancedQRCode from "./components/EnhancedQRCode";
 import ProfileCompletionBanner from "./components/ProfileCompletionBanner";
 import useProfileStatus from "./hooks/useProfileStatus";
+import heroMission from "./assets/mission.png";
+import heroCitizen from "./assets/login.png";
+import heroSignup from "./assets/signup.png";
 import {
   FileText, List, User, Headphones, BarChart3, BookOpen,
   MessageCircle, MapPin, Search, Calendar, Bus, ChartColumn,
   Vote, Building2, Car, Zap, HandCoins, ReceiptIndianRupee,
-  TrainFront, School,
+  TrainFront, School, ShieldCheck, Landmark, ScanSearch,
 } from "lucide-react";
 
 function Home() {
   const [activeFaq, setActiveFaq] = useState(null);
+  const [activeHeroSlide, setActiveHeroSlide] = useState(0);
   const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
@@ -168,6 +172,24 @@ function Home() {
     },
   ];
 
+  const heroSlides = [
+    { src: heroMission, alt: "Citizen service mission visual" },
+    { src: heroCitizen, alt: "Community participation visual" },
+    { src: heroSignup, alt: "Citizen onboarding visual" },
+    { src: "/profiles/michael.jpg", alt: "Community volunteer profile" },
+    { src: "/profiles/sarah.jpg", alt: "Citizen engagement profile" },
+  ];
+
+  useEffect(() => {
+    if (heroSlides.length <= 1) return;
+
+    const intervalId = setInterval(() => {
+      setActiveHeroSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 3000);
+
+    return () => clearInterval(intervalId);
+  }, [heroSlides.length]);
+
   /* ------------------------------------------------------------------ */
   /*  Render                                                             */
   /* ------------------------------------------------------------------ */
@@ -195,45 +217,124 @@ function Home() {
         <ProfileCompletionBanner />
 
         {/* ── Hero ─────────────────────────────────────────────── */}
-        <section className="relative py-20 md:py-32 bg-white dark:bg-gray-950">
-          <div className="mx-auto max-w-4xl px-5 text-center">
-            <p className="mb-4 inline-block rounded-full bg-orange-50 dark:bg-orange-950/40 px-4 py-1.5 text-sm font-medium text-orange-700 dark:text-orange-300">
-              Civic engagement, simplified
-            </p>
+        <section className="relative overflow-hidden bg-[#f9fbff] dark:bg-[#020812] py-16 md:py-20">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute -top-16 -left-16 h-72 w-72 rounded-full bg-orange-300/25 blur-3xl" />
+            <div className="absolute top-24 right-0 h-80 w-80 rounded-full bg-cyan-300/20 blur-3xl" />
+            <div className="absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-emerald-300/20 blur-3xl" />
+          </div>
 
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight tracking-tight">
-              Report problems.
-              <br />
-              <span className="text-orange-600 dark:text-orange-400">
-                Track fixes.
-              </span>
-              <br />
-              Improve your city.
-            </h1>
+          <div className="mx-auto max-w-7xl px-5">
+            <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="relative z-10">
+                <div className="mb-6 flex flex-wrap items-center gap-3">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-1.5 text-xs font-semibold tracking-wide text-slate-700 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900/80 dark:text-slate-200 dark:ring-slate-700">
+                    <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
+                    Next-gen civic intelligence layer
+                  </span>
+                  <span className="inline-flex h-2 w-20 overflow-hidden rounded-full bg-white/80 ring-1 ring-slate-200 dark:bg-slate-900/70 dark:ring-slate-700">
+                    <span className="w-1/3 bg-[#FF9933]" />
+                    <span className="w-1/3 bg-white" />
+                    <span className="w-1/3 bg-[#138808]" />
+                  </span>
+                </div>
 
-            <p className="mt-6 text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
-              Awaaz connects citizens with local government so broken
-              streetlights, potholes, and other issues actually get resolved.
-            </p>
+                <h1 className="text-balance text-4xl font-black leading-[1.05] text-slate-900 sm:text-5xl md:text-6xl dark:text-white">
+                  Your city, now in
+                  <br />
+                  <span className="bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 bg-clip-text text-transparent">
+                    real-time mode.
+                  </span>
+                </h1>
 
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-              <button
-                onClick={() => navigate("/signup")}
-                className="rounded-lg bg-orange-600 px-7 py-3 text-base font-semibold text-white shadow-sm hover:bg-orange-700 transition-colors"
-              >
-                Get Started — it's free
-              </button>
+                <p className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">
+                  Post an issue in seconds, let AI auto-prioritize it, and follow every action live
+                  as departments respond across the city grid.
+                </p>
 
-              <button
-                onClick={() =>
-                  document
-                    .getElementById("how-it-works")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-                className="rounded-lg border border-gray-300 dark:border-gray-700 px-7 py-3 text-base font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
-              >
-                How it works
-              </button>
+                <div className="mt-9 flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={() => navigate(isSignedIn ? "/report-issue" : "/signup")}
+                    className="rounded-xl bg-orange-600 px-6 py-3 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition-all hover:-translate-y-0.5 hover:bg-orange-700"
+                  >
+                    {isSignedIn ? "Trigger a Live Report" : "Enter the Civic Grid"}
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      document
+                        .getElementById("how-it-works")
+                        ?.scrollIntoView({ behavior: "smooth" })
+                    }
+                    className="rounded-xl border border-slate-300 bg-white/80 px-6 py-3 text-base font-semibold text-slate-700 transition-colors hover:bg-white dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:bg-slate-900"
+                  >
+                    Watch How It Flows
+                  </button>
+                </div>
+
+                <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl bg-white/85 p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900/70 dark:ring-slate-700">
+                    <p className="text-2xl font-black text-slate-900 dark:text-white">24/7</p>
+                    <p className="text-xs font-medium text-slate-600 dark:text-slate-300">Always-on citizen reporting lane</p>
+                  </div>
+                  <div className="rounded-xl bg-white/85 p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900/70 dark:ring-slate-700">
+                    <p className="text-2xl font-black text-slate-900 dark:text-white">AI+</p>
+                    <p className="text-xs font-medium text-slate-600 dark:text-slate-300">Smart triage and route prediction</p>
+                  </div>
+                  <div className="rounded-xl bg-white/85 p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900/70 dark:ring-slate-700">
+                    <p className="text-2xl font-black text-slate-900 dark:text-white">LiveX</p>
+                    <p className="text-xs font-medium text-slate-600 dark:text-slate-300">See every workflow state in motion</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative z-10">
+                <div className="hero-visual-shell relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+                  <div className="relative h-[460px] w-full">
+                    {heroSlides.map((slide, index) => (
+                      <img
+                        key={`${slide.src}-${index}`}
+                        src={slide.src}
+                        alt={slide.alt}
+                        aria-hidden={index !== activeHeroSlide}
+                        className={`hero-image-moving absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+                          index === activeHeroSlide ? "opacity-100" : "opacity-0"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/25 to-transparent" />
+                  <div className="hero-overlay-sheen absolute inset-0" />
+
+                  <div className="absolute right-5 top-5 z-10 flex items-center gap-2 rounded-full bg-slate-900/50 px-2 py-1 backdrop-blur">
+                    {heroSlides.map((_, index) => (
+                      <span
+                        key={`dot-${index}`}
+                        className={`h-1.5 w-1.5 rounded-full transition-all ${
+                          index === activeHeroSlide ? "bg-white w-4" : "bg-white/50"
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="absolute bottom-5 left-5 right-5 grid gap-3 sm:grid-cols-2">
+                    <div className="hero-float-one rounded-2xl bg-white/90 p-3 shadow-lg backdrop-blur dark:bg-slate-900/85">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Hot zone</p>
+                      <p className="mt-1 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <Landmark size={15} className="text-orange-500" />
+                        Roads & Mobility Stack
+                      </p>
+                    </div>
+                    <div className="hero-float-two rounded-2xl bg-white/90 p-3 shadow-lg backdrop-blur dark:bg-slate-900/85">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Live pipeline</p>
+                      <p className="mt-1 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <ScanSearch size={15} className="text-emerald-500" />
+                        Verified → Routed → Actioned
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>

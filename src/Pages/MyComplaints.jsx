@@ -1,31 +1,53 @@
-import React, { useState } from "react";
-
-const complaintsData = [
-  {
-    id: 1,
-    complaint: "Street lights not working properly in my area.",
-    status: "Pending",
-    upvotes: 12,
-    date: "2025-06-25",
-  },
-  {
-    id: 2,
-    complaint: "Garbage collection is irregular and causing bad smell.",
-    status: "In Progress",
-    upvotes: 35,
-    date: "2025-06-20",
-  },
-  {
-    id: 3,
-    complaint: "Water supply is inconsistent for last 2 weeks.",
-    status: "Resolved",
-    upvotes: 28,
-    date: "2025-06-15",
-  },
-];
+import React, { useEffect, useState } from "react";
+import API_BASE from "../utils/api";
 
 const MyComplaints = () => {
   const [filter, setFilter] = useState("All");
+  const [complaints, setComplaints] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchComplaints = async (targetPage = 1, targetFilter = filter) => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Please login to view your complaints");
+      }
+
+      const status = targetFilter === "All" ? "all" : encodeURIComponent(targetFilter);
+      const response = await fetch(
+        `${API_BASE}/issues/mine?page=${targetPage}&limit=10&status=${status}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to load complaints");
+      }
+
+      setComplaints(payload.data || []);
+      setPage(payload.pagination?.page || targetPage);
+      setTotalPages(payload.pagination?.totalPages || 1);
+    } catch (err) {
+      setError(err.message || "Failed to load complaints");
+      setComplaints([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchComplaints(1, filter);
+  }, [filter]);
 
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "long", day: "numeric" };
@@ -46,10 +68,7 @@ const MyComplaints = () => {
     }
   };
 
-  const filteredComplaints =
-    filter === "All"
-      ? complaintsData
-      : complaintsData.filter((c) => c.status === filter);
+  const filteredComplaints = complaints;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-slate-100 dark:from-gray-900 dark:via-emerald-950 dark:to-slate-900 relative overflow-hidden">
@@ -89,7 +108,10 @@ const MyComplaints = () => {
             <div className="relative">
               <select
                 value={filter}
-                onChange={(e) => setFilter(e.target.value)}
+                onChange={(e) => {
+                  setPage(1);
+                  setFilter(e.target.value);
+                }}
                 className="appearance-none pl-4 pr-10 py-3 text-emerald-700 dark:text-emerald-300 bg-white/70 dark:bg-emerald-950/70 border border-emerald-200/40 dark:border-emerald-900/60 rounded-2xl shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-400/40 transition font-medium"
               >
                 <option value="All">All Complaints</option>
@@ -105,8 +127,18 @@ const MyComplaints = () => {
             </div>
           </div>
 
+          {error && (
+            <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+              {error}
+            </div>
+          )}
+
           {/* Complaints list */}
-          {filteredComplaints.length === 0 ? (
+          {isLoading ? (
+            <div className="py-16 text-center text-emerald-700 dark:text-emerald-200 text-lg font-semibold">
+              Loading complaints...
+            </div>
+          ) : filteredComplaints.length === 0 ? (
             <div className="text-center py-24">
               <div className="relative mx-auto w-28 h-28 mb-6 flex items-center justify-center bg-gradient-to-br from-emerald-100 to-green-100 rounded-3xl shadow-xl">
                 <svg className="w-14 h-14 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -118,9 +150,9 @@ const MyComplaints = () => {
             </div>
           ) : (
             <div className="grid gap-7">
-              {filteredComplaints.map(({ id, complaint, status, upvotes, date }) => (
+              {filteredComplaints.map((issue) => (
                 <div
-                  key={id}
+                  key={issue._id}
                   className="group relative bg-white/80 dark:bg-emerald-950/80 border border-emerald-200/40 dark:border-emerald-800/50 shadow-xl hover:shadow-2xl rounded-3xl p-8 transition duration-300 hover:-translate-y-1"
                 >
                   <span className="absolute inset-0 rounded-3xl bg-gradient-to-r from-emerald-400/10 via-teal-300/10 to-emerald-300/0 opacity-0 group-hover:opacity-70 transition duration-500 pointer-events-none will-change-transform" />
@@ -132,30 +164,54 @@ const MyComplaints = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                         </div>
-                        <span className="font-semibold text-lg">{formatDate(date)}</span>
+                        <span className="font-semibold text-lg">{formatDate(issue.createdAt)}</span>
                       </div>
-                      <span className={`px-4 py-2 min-w-[120px] rounded-2xl text-base font-semibold shadow ${getStatusColor(status)}`}>{status}</span>
+                      <span className={`px-4 py-2 min-w-[120px] rounded-2xl text-base font-semibold shadow ${getStatusColor(issue.status)}`}>{issue.status}</span>
                     </div>
 
-                    <p className="text-gray-800 dark:text-emerald-100 text-xl leading-relaxed mb-4 font-medium">{complaint}</p>
+                    <p className="text-gray-800 dark:text-emerald-100 text-xl leading-relaxed mb-4 font-medium">{issue.description}</p>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-5 mt-2 border-t border-emerald-100/40 dark:border-emerald-700/40 gap-4">
                       <div className="flex items-center gap-3 text-emerald-700 dark:text-emerald-300 font-semibold group/upvote">
                         <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50/70 dark:bg-emerald-900/60 group-hover/upvote:bg-emerald-100/90 transition">
                           <svg className="w-6 h-6 group-hover/upvote:scale-110 transition-transform" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
                           </svg>
-                          <span className="font-bold text-xl">{upvotes}</span>
+                          <span className="font-bold text-xl">{issue.upvotes || 0}</span>
                           <span className="text-sm font-medium text-emerald-600 dark:text-emerald-300">upvotes</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 text-emerald-500 font-semibold">
                         <span className="block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span className="text-base font-medium">Complaint #{id}</span>
+                        <span className="text-base font-medium">Complaint #{issue._id?.slice(-6) || "N/A"}</span>
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {!isLoading && totalPages > 1 && (
+            <div className="mt-8 flex items-center justify-center gap-4">
+              <button
+                type="button"
+                onClick={() => fetchComplaints(page - 1, filter)}
+                disabled={page <= 1}
+                className="px-4 py-2 rounded-xl border border-emerald-300 text-emerald-700 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-emerald-800 dark:text-emerald-200 font-semibold">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => fetchComplaints(page + 1, filter)}
+                disabled={page >= totalPages}
+                className="px-4 py-2 rounded-xl border border-emerald-300 text-emerald-700 disabled:opacity-50"
+              >
+                Next
+              </button>
             </div>
           )}
         </div>

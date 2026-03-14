@@ -21,6 +21,7 @@ router.post(
 // Create issue with AI analysis
 router.post(
   "/",
+  verifyToken,
   upload.single("file"),
   classifyIssue,
   detectDuplicates,
@@ -33,8 +34,9 @@ router.patch("/:id/status", verifyToken, isOfficer, issueController.updateIssueS
 
 // GET: All issues
 router.get("/", issueController.getAllIssues);
+router.get("/mine", verifyToken, issueController.getMyIssues);
 router.get("/:id",issueController.getIssueById)
-router.delete("/issues/:id",verifyToken,isAdmin,issueController. deleteIssue);
-router.patch("/issues/:id",verifyToken,issueController.updateIssue)
+router.delete("/:id", verifyToken, isAdmin, issueController.deleteIssue);
+router.patch("/:id", verifyToken, issueController.updateIssue);
 
 module.exports = router;

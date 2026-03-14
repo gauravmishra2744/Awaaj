@@ -4,6 +4,13 @@ const { asyncHandler } = require('../utils/asyncHandler');
 const { uploadOnCloudinary } = require("../utils/cloudinary.js");
 const mongoose = require('mongoose');
 
+const parsePagination = (query) => {
+  const page = Math.max(parseInt(query.page, 10) || 1, 1);
+  const limit = Math.min(Math.max(parseInt(query.limit, 10) || 10, 1), 100);
+  const skip = (page - 1) * limit;
+  return { page, limit, skip };
+};
+
 const createIssue = asyncHandler(async (req, res) => {
   let { title, description, phone, email, notifyByEmail, location } = req.body;
 
@@ -80,13 +87,18 @@ const createIssue = asyncHandler(async (req, res) => {
     location: locationData,
   };
 
+  // Attach authenticated user info for ownership queries.
+  if (req.user?.id) {
+    issueData.userId = req.user.id;
+  }
+
   // Add AI classification if available
   if (req.aiClassification) {
     issueData.category = req.aiClassification.category;
     issueData.categoryConfidence = req.aiClassification.confidence;
     issueData.categoryScores = req.aiClassification.allCategories;
   } else {
-    issueData.category = 'other'; // Default category
+    issueData.category = 'Others'; // Default category
     issueData.categoryConfidence = 0;
   }
 
@@ -98,7 +110,7 @@ const createIssue = asyncHandler(async (req, res) => {
   // Add AI priority if available
   if (req.aiPriority) {
     issueData.priorityScore = req.aiPriority.priorityScore;
-    issueData.priorityLevel = req.aiPriority.priorityLevel;
+    issueData.priority = req.aiPriority.priorityLevel;
     issueData.priorityFactors = req.aiPriority.factors;
     issueData.priorityReasoning = req.aiPriority.reasoning;
     
@@ -107,7 +119,7 @@ const createIssue = asyncHandler(async (req, res) => {
     const slaDeadline = new Date();
     slaDeadline.setHours(slaDeadline.getHours() + slaHours);
     issueData.slaDeadline = slaDeadline;
-    issueData.slaStatus = 'pending';
+    issueData.slaStatus = 'On-Track';
   }
 
   const issue = await Issue.create(issueData);
@@ -115,7 +127,7 @@ const createIssue = asyncHandler(async (req, res) => {
   // Send confirmation email
   if (notifyByEmail === 'true' && email) {
     const categoryText = issue.category || 'Other';
-    const priorityText = issue.priorityLevel || 'Normal';
+    const priorityText = issue.priority || 'Normal';
     
     await sendEmail(
       email,
@@ -135,15 +147,94 @@ const createIssue = asyncHandler(async (req, res) => {
     aiAnalysis: {
       category: issueData.category,
       categoryConfidence: issueData.categoryConfidence,
-      priorityLevel: issueData.priorityLevel,
+      priorityLevel: issueData.priority,
       priorityScore: issueData.priorityScore,
     }
   });
 });
 
 const getAllIssues = asyncHandler(async (req, res) => {
-  const issues = await Issue.find().sort({ createdAt: -1 });
-  return res.json(issues);
+  const { status, category, priority, search, sort = 'newest' } = req.query;
+  const { page, limit, skip } = parsePagination(req.query);
+
+  const filter = {};
+
+  if (status && status !== 'all') {
+    filter.status = status;
+  }
+
+  if (category && category !== 'all') {
+    filter.category = category;
+  }
+
+  if (priority && priority !== 'all') {
+    filter.priority = priority;
+  }
+
+  if (search) {
+    filter.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } },
+    ];
+  }
+
+  const sortMap = {
+    newest: { createdAt: -1 },
+    oldest: { createdAt: 1 },
+    priority: { priorityScore: -1, createdAt: -1 },
+  };
+
+  const sortQuery = sortMap[sort] || sortMap.newest;
+
+  const [issues, total] = await Promise.all([
+    Issue.find(filter).sort(sortQuery).skip(skip).limit(limit),
+    Issue.countDocuments(filter),
+  ]);
+
+  return res.json({
+    data: issues,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: skip + issues.length < total,
+      hasPrevPage: page > 1,
+    },
+  });
+});
+
+const getMyIssues = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = parsePagination(req.query);
+  const { status } = req.query;
+
+  const userEmail = req.user?.email;
+  if (!userEmail) {
+    return res.status(401).json({ error: 'User email is missing in token payload' });
+  }
+
+  const filter = { email: userEmail };
+  if (status && status !== 'all') {
+    filter.status = status;
+  }
+
+  const [issues, total] = await Promise.all([
+    Issue.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Issue.countDocuments(filter),
+  ]);
+
+  return res.json({
+    data: issues,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: skip + issues.length < total,
+      hasPrevPage: page > 1,
+    },
+  });
 });
 
 const updateIssueStatus = asyncHandler(async (req, res) => {
@@ -253,4 +344,12 @@ const updateIssue = asyncHandler(async (req, res) => {
   return res.json({ message: "Issue updated successfully", issue: updatedIssue });
 });
 
-module.exports = { createIssue, getAllIssues, updateIssueStatus,getIssueById,deleteIssue,updateIssue };
+module.exports = {
+  createIssue,
+  getAllIssues,
+  getMyIssues,
+  updateIssueStatus,
+  getIssueById,
+  deleteIssue,
+  updateIssue,
+};

@@ -19,6 +19,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import useProfileStatus from '../hooks/useProfileStatus';
 import API_BASE from '../utils/api';
+import csrfManager from '../utils/csrfManager';
 import Navbar from '../components/Navbar';
 
 
@@ -118,7 +119,7 @@ const Profile = () => {
     
     try {
       console.log('Sending update request with token:', token ? 'Token exists' : 'No token');
-      const response = await fetch(`${API_BASE}/profile/me`, {
+      const response = await csrfManager.secureFetch(`${API_BASE}/profile/me`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

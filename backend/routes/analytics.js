@@ -36,7 +36,7 @@ router.get('/overview', verifyToken, isAdmin, asyncHandler(async (req, res) => {
   const priorityStats = await Issue.aggregate([
     {
       $group: {
-        _id: '$priorityLevel',
+        _id: '$priority',
         count: { $sum: 1 },
         avgScore: { $avg: '$priorityScore' },
       },
@@ -67,8 +67,8 @@ router.get('/overview', verifyToken, isAdmin, asyncHandler(async (req, res) => {
             $match: {
               slaDeadline: { $exists: true },
               $or: [
-                { status: 'resolved', resolvedAt: { $lte: '$slaDeadline' } },
-                { status: { $ne: 'resolved' }, slaDeadline: { $gte: now } },
+                { status: 'Resolved', resolvedAt: { $lte: '$slaDeadline' } },
+                { status: { $ne: 'Resolved' }, slaDeadline: { $gte: now } },
               ],
             },
           },
@@ -78,7 +78,7 @@ router.get('/overview', verifyToken, isAdmin, asyncHandler(async (req, res) => {
           {
             $match: {
               slaDeadline: { $exists: true },
-              status: { $ne: 'resolved' },
+              status: { $ne: 'Resolved' },
               slaDeadline: { $lt: now },
             },
           },
@@ -111,11 +111,11 @@ router.get('/overview', verifyToken, isAdmin, asyncHandler(async (req, res) => {
 
   // Recent high-priority issues
   stats.highPriorityRecent = await Issue.find({
-    priorityLevel: 'High',
+    priority: 'High',
   })
     .sort({ createdAt: -1 })
     .limit(5)
-    .select('title category priorityScore priorityLevel createdAt');
+    .select('title category priorityScore priority createdAt');
 
   // Category trends (last 30 days)
   const thirtyDaysAgo = new Date();

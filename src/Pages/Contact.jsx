@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   User,
   Mail,
@@ -9,6 +9,7 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
+import API_BASE from "../utils/api";
 
 const ContactForm = () => {
   const [formData, setFormData] = useState({
@@ -20,6 +21,45 @@ const ContactForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    const hydrateFromProfile = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/profile/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) return;
+
+        const profile = await response.json();
+        setFormData((prev) => ({
+          ...prev,
+          name: prev.name || profile.name || "",
+          email: prev.email || profile.email || "",
+        }));
+      } catch {
+        const storedUser = localStorage.getItem("user");
+        if (!storedUser) return;
+        try {
+          const parsed = JSON.parse(storedUser);
+          setFormData((prev) => ({
+            ...prev,
+            name: prev.name || parsed.name || "",
+            email: prev.email || parsed.email || "",
+          }));
+        } catch {
+          // Ignore malformed local storage data.
+        }
+      }
+    };
+
+    hydrateFromProfile();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
