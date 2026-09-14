@@ -87,7 +87,7 @@ const Footer = () => {
             </div>
 
             <a
-              href="https://github.com/HarshS16/Awaaz"
+              href="https://github.com/gauravmishra2744"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
